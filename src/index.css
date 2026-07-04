@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/*
+  Reisen 팔레트 시스템
+  - data-theme 속성으로 전체 앱 색상을 한번에 전환
+  - 기본값은 Sky. Sunset / Mint / Lilac 로 실험 가능
+*/
+:root,
+:root[data-theme="sky"] {
+  --color-primary: #2563eb;
+  --color-primary-light: #dbeafe;
+  --color-primary-dark: #1d4ed8;
+}
+
+:root[data-theme="sunset"] {
+  --color-primary: #ea580c;
+  --color-primary-light: #ffedd5;
+  --color-primary-dark: #c2410c;
+}
+
+:root[data-theme="mint"] {
+  --color-primary: #059669;
+  --color-primary-light: #d1fae5;
+  --color-primary-dark: #047857;
+}
+
+:root[data-theme="lilac"] {
+  --color-primary: #7c3aed;
+  --color-primary-light: #ede9fe;
+  --color-primary-dark: #6d28d9;
+}
+
+/* Tailwind v4: CSS 변수를 유틸리티 클래스로 노출 */
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-primary-light: var(--color-primary-light);
+  --color-primary-dark: var(--color-primary-dark);
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+  background-color: #f8fafc;
+}
+
+/* 모바일 브라우저 최적화: 최대 폭을 앱처럼 제한 */
+#root {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: #ffffff;
+}
