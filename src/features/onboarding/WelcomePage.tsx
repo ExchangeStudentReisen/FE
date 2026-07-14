@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import kakaoLoginButton from '../../assets/kakao_login_large_wide.png'
 import { BoardingPassCard } from './BoardingPassCard'
 
 export function WelcomePage() {
@@ -35,7 +36,17 @@ export function WelcomePage() {
         >
           학교 이메일로 시작하기
         </button>
-        <button
+<button
+  onClick={() => alert('카카오 로그인은 백엔드 연결 후 구현 예정입니다.')}
+  className="w-full h-11 rounded-xl overflow-hidden"
+>
+  <img
+    src={kakaoLoginButton}
+    alt="카카오 로그인"
+    className="w-full h-full object-fill"
+  />
+</button>
+        {/* <button
           onClick={() => alert('카카오 로그인은 백엔드 연결 후 구현 예정입니다.')}
           className="w-full h-11 rounded-xl bg-[#FEE500] flex items-center justify-center gap-2"
         >
@@ -46,7 +57,7 @@ export function WelcomePage() {
             />
           </svg>
           <span className="text-black/85 text-sm font-medium">카카오 로그인</span>
-        </button>
+        </button> */}
         <p className="text-center text-xs text-slate-400 mt-2">
           이미 계정이 있어요 · <span
             onClick={() => navigate('/login')}
