@@ -5,7 +5,7 @@ const PAGE_LABEL: Record<string, string> = {
   '/feed': 'Reisen',
   '/search': '탐색',
   '/post/new': '글쓰기',
-  '/profile': '나',
+  '/profile': '프로필 페이지',
 }
 
 function getLabel(pathname: string) {
@@ -39,7 +39,7 @@ export function Header() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate('/post/new')}
-          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+          className={`cursor-pointer w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
             pathname.startsWith('/post/new')
               ? 'bg-primary text-white'
               : 'bg-slate-100 text-slate-500'
@@ -50,12 +50,12 @@ export function Header() {
         </button>
         <button
           onClick={() => navigate('/profile')}
-          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+          className={`cursor-pointer w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
             pathname.startsWith('/profile')
               ? 'bg-primary text-white'
               : 'bg-slate-100 text-slate-500'
           }`}
-          aria-label="나"
+          aria-label="프로필 페이지"
         >
           <User size={18} />
         </button>
