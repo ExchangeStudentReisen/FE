@@ -1,17 +1,18 @@
-import { BottomNav } from '../../components/BottomNav'
+import { Header } from '../../components/Header'
 
 export function FeedPage() {
   return (
-    <div className="pb-20">
-      <header className="p-4">
-        <p className="text-xs text-primary font-medium">지금 유럽</p>
-        <h1 className="text-xl font-bold text-slate-900">
+    <div className="pb-8">
+      <Header/>
+      <header className="px-4 pb-4">
+        <p className="text-m text-primary font-medium">지금 유럽</p>
+        <h1 className="text-2xl font-bold text-slate-900">
           오늘은 어디로
           <br />
           같이 가볼까요?
         </h1>
         <input
-          className="w-full mt-3 px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
+          className="w-full mt-3 px-4 py-2.5 rounded-xl border border-slate-200 text-m"
           placeholder="도시, 날짜로 동행 찾기"
         />
       </header>
@@ -20,8 +21,6 @@ export function FeedPage() {
       <p className="px-4 text-sm text-slate-400">
         피드 목록이 이 자리에 표시됩니다.
       </p>
-
-      <BottomNav />
     </div>
   )
 }
