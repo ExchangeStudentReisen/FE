@@ -1,12 +1,17 @@
 export interface FeedItem {
   id: string
-  category: string
-  gender: string
-  month: string
+  flag: string
+  city: string
+  dateRange: string
   title: string
+  school: string
+  gender: string
+  age: number
+  tag: string
+  createdAgo: string
+  category: string
+  month: string
   createdAt: number
-  // TODO: 나머지 필드는 여기에 직접 추가
-  [key: string]: unknown
 }
 
 export interface FeedFilters {
