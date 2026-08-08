@@ -44,24 +44,26 @@ export function FeedPage() {
 
   return (
     <div className="pb-8">
-      <Header />
-      <header className="px-4 pb-4">
-        <p className="text-m text-primary font-medium">지금 유럽</p>
-        <h1 className="text-2xl font-bold text-slate-900">
-          오늘은 어디로
-          <br />
-          같이 가볼까요?
-        </h1>
-        <form onSubmit={handleSearchSubmit} className="mt-3">
-          <input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-m"
-            placeholder="도시, 날짜로 동행 찾기"
-          />
-        </form>
-      </header>
-
+      <div className="bg-linear-to-b from-indigo-100 via-blue-50 to-white">
+        <Header />
+        <header className="px-4 pb-4">
+          <p className="text-m text-primary font-medium">지금 유럽</p>
+          <h1 className="text-2xl font-bold text-slate-900">
+            오늘은 어디로
+            <br />
+            같이 가볼까요?
+          </h1>
+          <form onSubmit={handleSearchSubmit} className="mt-3">
+            <input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-m"
+              placeholder="도시, 날짜로 동행 찾기"
+            />
+          </form>
+        </header>
+      </div>
+      
       <FeedFilterBar
         filters={filters}
         options={FILTER_OPTIONS}
