@@ -57,7 +57,7 @@ export function FeedPage() {
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-m"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs"
               placeholder="도시, 날짜로 동행 찾기"
             />
           </form>
