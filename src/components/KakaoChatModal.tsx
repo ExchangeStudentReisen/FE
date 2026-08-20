@@ -46,7 +46,7 @@ export function KakaoChatModal({ open, onClose, authorName, chatUrl }: KakaoChat
 
         <button
           onClick={handleEnter}
-          className="mt-4 w-full rounded-xl bg-yellow-400 py-3 text-sm font-bold text-slate-900"
+          className="mt-4 w-full rounded-xl bg-[#FEE500] py-3 text-sm font-bold text-slate-900"
         >
           채팅방 입장하기
         </button>
