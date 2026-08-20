@@ -18,7 +18,7 @@ export function PostDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto min-h-screen max-w-[430px] bg-white pb-8">
+      <div className="mx-auto min-h-screen max-w-107.5 bg-white pb-8">
         <Header />
         <div className="px-4 mt-4 flex flex-col gap-3">
           <div className="h-6 w-2/3 rounded bg-slate-100 animate-pulse" />
