@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import kakaoLoginButton from '../../assets/kakao_login_large_wide.png'
+import naverLoginButton from '../../assets/NAVER.png'
 import { BoardingPassCard } from './BoardingPassCard'
 
 export function WelcomePage() {
@@ -31,41 +31,15 @@ export function WelcomePage() {
 
       <div className="flex flex-col gap-2">
         <button
-          onClick={() => navigate('/onboarding/school')}
-          className="w-full py-3 rounded-xl bg-primary text-white font-medium"
-        >
-          학교 이메일로 시작하기
-        </button>
-<button
-  onClick={() => alert('카카오 로그인은 백엔드 연결 후 구현 예정입니다.')}
-  className="w-full h-11 rounded-xl overflow-hidden"
->
-  <img
-    src={kakaoLoginButton}
-    alt="카카오 로그인"
-    className="w-full h-full object-fill"
-  />
-</button>
-        {/* <button
           onClick={() => alert('카카오 로그인은 백엔드 연결 후 구현 예정입니다.')}
-          className="w-full h-11 rounded-xl bg-[#FEE500] flex items-center justify-center gap-2"
+          className="w-full h-14 rounded-xl overflow-hidden"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M10 3C5.582 3 2 5.83 2 9.318c0 2.24 1.482 4.207 3.716 5.33-.163.596-.591 2.166-.678 2.505-.107.418.153.412.323.3.133-.089 2.096-1.436 2.955-2.023.545.079 1.106.121 1.684.121 4.418 0 8-2.83 8-6.233C18 5.83 14.418 3 10 3Z"
-              fill="black"
-            />
-          </svg>
-          <span className="text-black/85 text-sm font-medium">카카오 로그인</span>
-        </button> */}
-        <p className="text-center text-xs text-slate-400 mt-2">
-          이미 계정이 있어요 · <span
-            onClick={() => navigate('/login')}
-            className="text-slate-600 font-medium cursor-pointer"
-          >
-            로그인
-          </span>
-        </p>
+          <img
+            src={naverLoginButton}
+            alt="카카오 로그인"
+            className="w-full h-full object-fill"
+          />
+        </button>
       </div>
     </div>
   )
