@@ -18,7 +18,7 @@ export function PostDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto min-h-screen max-w-107.5 bg-white pb-8">
+      <div className="mx-auto min-h-screen max-w-107.5 bg-[#F5FAFE] pb-8">
         <Header />
         <div className="px-4 mt-4 flex flex-col gap-3">
           <div className="h-6 w-2/3 rounded bg-slate-100 animate-pulse" />
@@ -30,7 +30,7 @@ export function PostDetailPage() {
 
   if (isError || !post) {
     return (
-      <div className="mx-auto min-h-screen max-w-107.5 bg-white pb-8">
+      <div className="mx-auto min-h-screen max-w-107.5 bg-[#F5FAFE] pb-8">
         <Header />
         <div className="flex flex-col items-center justify-center py-20 px-4">
           <p className="text-sm text-slate-400">게시글을 찾을 수 없어요.</p>
@@ -42,7 +42,7 @@ export function PostDetailPage() {
   const city = getCityMeta(post.tripCity)
 
   return (
-    <div className="relative mx-auto min-h-screen max-w-107.5 bg-white pb-24">
+    <div className="relative min-h-screen bg-[#F5FAFE] pb-24">
       <Header />
 
       <div className="px-4 mt-4">
@@ -75,8 +75,8 @@ export function PostDetailPage() {
           </span>
         </div>
 
-        {/* 작성자 */}
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-slate-100 p-3">
+        {/* 작성자 - 현재 API에 host 개인 나이/성별 필드 없어 이름만 노출 */}
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sky-100 text-sm font-bold text-sky-600">
             {post.authorName[0]}
           </div>
@@ -86,21 +86,21 @@ export function PostDetailPage() {
         {/* 일정 */}
         <section className="mt-5">
           <p className="text-sm font-semibold text-slate-900">일정</p>
-          <div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-100 px-3 py-2.5 text-sm text-slate-700">
+          <div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-100 bg-white px-3 py-2.5 text-sm text-slate-700">
             📅 {formatDateRange(post.startDate, post.endDate)}
           </div>
           <p className="mt-3 whitespace-pre-line text-sm text-slate-600">{post.content}</p>
         </section>
 
-        {/* 모집 정보 */}
+        {/* 모집 정보 - 항목 사이 구분선 */}
         <section className="mt-5">
           <p className="text-sm font-semibold text-slate-900">모집 정보</p>
-          <div className="mt-2 flex flex-col gap-2 rounded-xl border border-slate-100 p-3 text-sm">
-            <div className="flex justify-between text-slate-500">
+          <div className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-100 bg-white px-3 text-sm">
+            <div className="flex justify-between py-2.5 text-slate-500">
               <span>모집 성별</span>
               <span className="font-medium text-slate-900">{getGenderLabel(post.gender)}</span>
             </div>
-            <div className="flex justify-between text-slate-500">
+            <div className="flex justify-between py-2.5 text-slate-500">
               <span>연령대</span>
               <span className="font-medium text-slate-900">
                 {formatAgeRange(post.startAge, post.endAge)}
