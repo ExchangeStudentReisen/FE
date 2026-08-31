@@ -43,8 +43,8 @@ export function FeedPage() {
   }
 
   return (
-    <div className="pb-8">
-      <div className="bg-linear-to-b from-indigo-100 via-blue-50 to-white">
+    <div className="mx-auto min-h-screen max-w-107.5 bg-[#F5FAFE] pb-8">
+      <div className="bg-linear-to-b from-indigo-100 via-blue-50 to-white border-b border-slate-100">
         <Header />
         <header className="px-4 pb-4">
           <p className="text-m text-primary font-medium">지금 유럽</p>
@@ -57,13 +57,13 @@ export function FeedPage() {
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs shadow-sm bg-white"
               placeholder="도시, 날짜로 동행 찾기"
             />
           </form>
         </header>
       </div>
-      
+
       <FeedFilterBar
         filters={filters}
         options={FILTER_OPTIONS}
@@ -85,19 +85,21 @@ export function FeedPage() {
         )}
 
         {items.map((item) => (
-            <FeedPostCard
-    key={item.id}
-    id={item.id}
-    flag={item.flag}
-    city={item.city}
-    dateRange={item.dateRange}
-    title={item.title}
-    school={item.school}
-    gender={item.gender}
-    age={item.age}
-    tag={item.tag}
-    createdAgo={item.createdAgo}
-  />
+          <FeedPostCard
+            key={item.id}
+            id={item.id}
+            travelCity={item.travelCity}
+            title={item.title}
+            content={item.content}
+            startDate={item.startDate}
+            endDate={item.endDate}
+            startAge={item.startAge}
+            endAge={item.endAge}
+            gender={item.gender}
+            isRecruiting={item.isRecruiting}
+            view={item.view}
+            updatedAt={item.updatedAt}
+          />
         ))}
       </div>
 
