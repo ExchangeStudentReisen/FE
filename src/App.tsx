@@ -14,7 +14,7 @@ function App() {
       <Route path="/feed" element={<FeedPage />} />
       <Route path="/search" element={<SearchPage />} />
       <Route path="/post/new" element={<PostCreatePage />} />
-      <Route path="/post/:postId" element={<PostDetailPage />} />
+      <Route path="/post/:id" element={<PostDetailPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
       <Route path="/onboarding/school" element={<SchoolEmailVerifyPage />} />

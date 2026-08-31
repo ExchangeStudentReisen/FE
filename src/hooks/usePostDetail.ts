@@ -1,10 +1,17 @@
+// hooks/usePostDetail.ts
 import { useQuery } from '@tanstack/react-query'
-import type { PostDetail } from '../types/postdetail'
+import type { PostDetailApiData } from '../types/postDetail'
+import { POST_DETAIL_MOCKS } from '../mocks/postDetailMocks'
 
-async function fetchPostDetail(id: string): Promise<PostDetail> {
-  const res = await fetch(`/api/posts/${id}`)
-  if (!res.ok) throw new Error('게시글을 불러오지 못했어요')
-  return res.json()
+// TODO: 백엔드 연동 시 실제 fetch로 교체
+async function fetchPostDetail(id: string): Promise<PostDetailApiData> {
+  await new Promise((resolve) => setTimeout(resolve, 300))
+
+  const res = POST_DETAIL_MOCKS[id]
+  if (!res || res.result !== 'SUCCESS') {
+    throw new Error('게시글을 찾을 수 없어요')
+  }
+  return res.data
 }
 
 export function usePostDetail(id: string | undefined) {

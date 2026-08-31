@@ -2,7 +2,7 @@ import type { FeedFilters, FeedItem, FeedPageResult } from '../types/feed'
 
 const ALL_ITEMS: FeedItem[] = [
   {
-    id: 'feed-1',
+    id: '1',
     flag: '🇨🇿',
     city: 'Prague',
     category: 'prague',
@@ -17,7 +17,7 @@ const ALL_ITEMS: FeedItem[] = [
     createdAt: Date.now() - 15 * 60_000,
   },
   {
-    id: 'feed-2',
+    id: '2',
     flag: '🇦🇹',
     city: 'Vienna',
     category: 'vienna',
@@ -32,7 +32,7 @@ const ALL_ITEMS: FeedItem[] = [
     createdAt: Date.now() - 60 * 60_000,
   },
   {
-    id: 'feed-3',
+    id: '3',
     flag: '🇫🇷',
     city: 'Paris',
     category: 'paris',
