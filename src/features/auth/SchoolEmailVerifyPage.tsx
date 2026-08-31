@@ -2,9 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useNavigate } from 'react-router-dom'
-import { sendVerificationEmail, verifySchoolEmailCode } from '../../api/schoolEmailAuth'
-import { SCHOOLS, type School } from './schools'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { sendVerificationCode, verifyCode, type VerifiedSignupProfile } from '../../api/schoolEmailAuth'
+
+interface School {
+  id: number
+  name: string
+  emailDomains: string[]
+}
 
 // 영문자 1개 이상 포함 + 영문/숫자만 허용
 const LOCAL_PART_REGEX = /^(?=.*[a-zA-Z])[a-zA-Z0-9]{2,}$/
@@ -26,21 +31,34 @@ const STEP_META: Record<Step, { title: string; index: number }> = {
   done: { title: '완료', index: 4 },
 }
 const TOTAL_STEPS = 4
-// TODO: 실제 정책에 맞게 조정 예정 (사용자가 직접 수정할 예정)
-const RESEND_COOLDOWN = 30
+const RESEND_COOLDOWN = 60
 
 export function SchoolEmailVerifyPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const pendingKey: string = (location.state as { pendingKey?: string })?.pendingKey ?? ''
+
+  const [schools, setSchools] = useState<School[]>([])
+  const [loadingSchools, setLoadingSchools] = useState(true)
+
   const [step, setStep] = useState<Step>('school')
   const [school, setSchool] = useState<School | null>(null)
+  const [domain, setDomain] = useState('')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState<string[]>(Array(6).fill(''))
+  const [emailError, setEmailError] = useState('')
   const [error, setError] = useState('')
   const [secondsLeft, setSecondsLeft] = useState(298)
   const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN)
   const [isSending, setIsSending] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
   const [showInvalidAccessModal, setShowInvalidAccessModal] = useState(false)
+  const [verified, setVerified] = useState<VerifiedSignupProfile | null>(null)
+
+  const [showReportForm, setShowReportForm] = useState(false)
+  const [reportMessage, setReportMessage] = useState('')
+  const [isReportSubmitting, setIsReportSubmitting] = useState(false)
+  const [reportSubmitted, setReportSubmitted] = useState(false)
 
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
@@ -49,6 +67,17 @@ export function SchoolEmailVerifyPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<EmailForm>({ resolver: zodResolver(emailSchema) })
+
+  useEffect(() => {
+    if (!pendingKey) {
+      navigate('/', { replace: true })
+      return
+    }
+    fetch('/api/schools', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((body) => setSchools(body.data ?? []))
+      .finally(() => setLoadingSchools(false))
+  }, [])
 
   useEffect(() => {
     if (step !== 'code') return
@@ -67,21 +96,48 @@ export function SchoolEmailVerifyPage() {
 
   const handleSelectSchool = (selected: School) => {
     setSchool(selected)
+    setDomain(selected.emailDomains[0] ?? '')
+    setShowReportForm(false)
+    setReportMessage('')
+    setReportSubmitted(false)
     setStep('email')
   }
 
-  const onSubmitEmail = async ({ local }: EmailForm) => {
-    if (!school) return
-    const fullEmail = `${local}@${school.domain}`
-    setIsSending(true)
+  const handleSubmitReport = async () => {
+    if (!school || !reportMessage.trim()) return
+    setIsReportSubmitting(true)
     try {
-      // ⚠️ MOCK 호출 — schoolEmailAuth.ts 참고
-      await sendVerificationEmail(fullEmail)
+      const res = await fetch(`/api/schools/${school.id}/domain-reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message: reportMessage.trim() }),
+      })
+      if (res.ok) {
+        setReportSubmitted(true)
+        setShowReportForm(false)
+        setReportMessage('')
+      }
+    } finally {
+      setIsReportSubmitting(false)
+    }
+  }
+
+  const onSubmitEmail = async ({ local }: EmailForm) => {
+    if (!school || !domain) return
+    const fullEmail = `${local}@${domain}`
+    setIsSending(true)
+    setEmailError('')
+    try {
+      await sendVerificationCode(pendingKey, school.id, fullEmail)
       setEmail(fullEmail)
       setStep('code')
       setSecondsLeft(298)
       setResendCooldown(RESEND_COOLDOWN)
+      setCode(Array(6).fill(''))
       setTimeout(() => codeInputRefs.current[0]?.focus(), 0)
+    } catch (e) {
+      setEmailError(e instanceof Error ? e.message : '인증 메일 전송에 실패했습니다.')
     } finally {
       setIsSending(false)
     }
@@ -104,38 +160,42 @@ export function SchoolEmailVerifyPage() {
   }
 
   const handleVerify = async () => {
+    if (!school) return
     const entered = code.join('')
     if (entered.length < 6) {
       setError('6자리를 모두 입력해주세요.')
       return
     }
     setIsVerifying(true)
+    setError('')
     try {
-      // ⚠️ MOCK 호출 — schoolEmailAuth.ts 참고 (정답코드 '482913' 하드코딩됨)
-      const isValid = await verifySchoolEmailCode(email, entered)
-      if (!isValid) {
-        setError('코드가 일치하지 않아요. 다시 확인해주세요.')
-        return
-      }
-      setError('')
+      const result = await verifyCode(pendingKey, school.id, email, entered)
+      setVerified(result)
       setStep('done')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '코드가 일치하지 않아요. 다시 확인해주세요.')
     } finally {
       setIsVerifying(false)
     }
   }
 
   const handleResend = async () => {
-    if (resendCooldown > 0) return
+    if (resendCooldown > 0 || !school) return
     setCode(Array(6).fill(''))
     setError('')
-    setSecondsLeft(298)
-    setResendCooldown(RESEND_COOLDOWN)
-    await sendVerificationEmail(email)
-    codeInputRefs.current[0]?.focus()
+    try {
+      await sendVerificationCode(pendingKey, school.id, email)
+      setSecondsLeft(298)
+      setResendCooldown(RESEND_COOLDOWN)
+      codeInputRefs.current[0]?.focus()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '재전송에 실패했습니다.')
+    }
   }
 
-  const handleGoHome = () => {
-    navigate('/feed', { replace: true })
+  const handleGoToProfileSetup = () => {
+    if (!verified) return
+    navigate('/onboarding/profile', { replace: true, state: { pendingKey, verified } })
   }
 
   const handleBack = () => {
@@ -207,17 +267,21 @@ export function SchoolEmailVerifyPage() {
             선택한 학교의 공식 이메일로 인증을 진행해요.
           </p>
 
-          <div className="flex flex-col gap-2">
-            {SCHOOLS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => handleSelectSchool(s)}
-                className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 hover:border-primary hover:bg-primary-light transition-colors"
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
+          {loadingSchools ? (
+            <p className="text-sm text-slate-400">불러오는 중...</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {schools.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => handleSelectSchool(s)}
+                  className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 hover:border-primary hover:bg-primary-light transition-colors"
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -246,12 +310,69 @@ export function SchoolEmailVerifyPage() {
                   : 'border-slate-200'
               }`}
             />
-            <span className="text-sm text-slate-500 whitespace-nowrap">@{school.domain}</span>
+            <span className="text-sm text-slate-500 whitespace-nowrap">@</span>
+            {school.emailDomains.length > 1 ? (
+              <select
+                value={domain}
+                onChange={(e) => setDomain(e.target.value)}
+                className="px-2 py-2.5 rounded-xl border border-slate-200 text-sm bg-white outline-none focus:border-primary"
+              >
+                {school.emailDomains.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-sm text-slate-500 whitespace-nowrap">{domain}</span>
+            )}
           </div>
           {errors.local && (
             <p className="text-xs text-red-500 mb-2">{errors.local.message}</p>
           )}
-          <div className="mb-6" />
+          {emailError && (
+            <p className="text-xs text-red-500 mb-2">{emailError}</p>
+          )}
+
+          {reportSubmitted ? (
+            <p className="text-xs text-green-600 mb-6">제보해주셔서 감사합니다. 확인 후 반영할게요.</p>
+          ) : showReportForm ? (
+            <div className="mb-6">
+              <textarea
+                value={reportMessage}
+                onChange={(e) => setReportMessage(e.target.value)}
+                placeholder="예: 실제 학교 이메일 도메인은 g.hanyang.ac.kr이에요."
+                rows={3}
+                maxLength={500}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary resize-none"
+              />
+              <div className="flex gap-2 mt-1.5">
+                <button
+                  type="button"
+                  onClick={handleSubmitReport}
+                  disabled={isReportSubmitting || !reportMessage.trim()}
+                  className="h-8 px-3 rounded-lg bg-slate-800 text-white text-xs font-medium disabled:opacity-50"
+                >
+                  {isReportSubmitting ? '전송 중...' : '제보하기'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowReportForm(false)}
+                  className="h-8 px-3 rounded-lg border border-slate-200 text-slate-500 text-xs font-medium"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowReportForm(true)}
+              className="text-xs text-slate-400 underline mb-6"
+            >
+              이메일 도메인이 잘못됐나요? 제보하기
+            </button>
+          )}
 
           <button
             type="submit"
@@ -313,22 +434,22 @@ export function SchoolEmailVerifyPage() {
         </div>
       )}
 
-      {step === 'done' && school && (
+      {step === 'done' && verified && (
         <div className="text-center py-5">
           <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-5">
             <span className="text-2xl text-green-600">✓</span>
           </div>
           <h1 className="text-xl font-bold text-slate-900 mb-2">인증이 완료됐어요</h1>
           <p className="text-sm text-slate-500 mb-7 leading-relaxed">
-            이제 {school.name} 뱃지와 함께
+            이제 {verified.schoolName} 뱃지와 함께
             <br />
             동행 게시글을 작성할 수 있어요.
           </p>
           <button
-            onClick={handleGoHome}
+            onClick={handleGoToProfileSetup}
             className="w-full h-11 rounded-xl bg-primary text-white font-medium"
           >
-            홈으로 이동
+            다음: 프로필 설정
           </button>
         </div>
       )}

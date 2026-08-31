@@ -4,20 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useUserStore } from "../../hooks/useUserStore";
-
-type Gender = "MALE" | "FEMALE" | "OTHER";
-
-interface PendingProfile {
-  nickname: string;
-  gender: Gender | null;
-  birthYear: number | null;
-}
-
-interface School {
-  id: number;
-  name: string;
-  emailDomain: string;
-}
+import type { VerifiedSignupProfile } from "../../api/schoolEmailAuth";
 
 const COUNTRIES: Record<string, string> = {
   GERMANY: "독일",
@@ -47,7 +34,7 @@ const COUNTRIES: Record<string, string> = {
   NEW_ZEALAND: "뉴질랜드",
 };
 
-const GENDER_LABEL: Record<Gender, string> = {
+const GENDER_LABEL: Record<string, string> = {
   MALE: "남성",
   FEMALE: "여성",
   OTHER: "기타",
@@ -56,7 +43,6 @@ const GENDER_LABEL: Record<Gender, string> = {
 const schema = z.object({
   name: z.string().min(1, "이름을 입력해주세요."),
   dispatchCountry: z.string().min(1, "파견 국가를 선택해주세요."),
-  schoolId: z.string().min(1, "학교를 선택해주세요."),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -64,46 +50,28 @@ type FormValues = z.infer<typeof schema>;
 export function ProfileSetupPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const pendingKey: string = (location.state as { pendingKey?: string })?.pendingKey ?? "";
+  const state = location.state as { pendingKey?: string; verified?: VerifiedSignupProfile } | null;
+  const pendingKey = state?.pendingKey ?? "";
+  const verified = state?.verified ?? null;
 
   const setUser = useUserStore((s) => s.setUser);
 
-  const [pending, setPending] = useState<PendingProfile | null>(null);
-  const [schools, setSchools] = useState<School[]>([]);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { name: verified?.nickname ?? "" },
+  });
 
   useEffect(() => {
-    if (!pendingKey) {
+    if (!pendingKey || !verified) {
       navigate("/", { replace: true });
-      return;
     }
-
-    Promise.all([
-      fetch(`/api/auth/pending?key=${encodeURIComponent(pendingKey)}`, {
-        credentials: "include",
-      }).then((r) => r.json()),
-      fetch("/api/schools", { credentials: "include" }).then((r) => r.json()),
-    ])
-      .then(([pendingRes, schoolsRes]) => {
-        if (!pendingRes.data) {
-          navigate("/", { replace: true });
-          return;
-        }
-        setPending(pendingRes.data);
-        setValue("name", pendingRes.data.nickname);
-        if (schoolsRes.data) setSchools(schoolsRes.data);
-      })
-      .catch(() => navigate("/", { replace: true }))
-      .finally(() => setLoading(false));
   }, []);
 
   const onSubmit = async (values: FormValues) => {
@@ -118,7 +86,6 @@ export function ProfileSetupPage() {
           pendingKey,
           name: values.name,
           dispatchCountry: values.dispatchCountry,
-          schoolId: Number(values.schoolId),
         }),
       });
       const data = await res.json();
@@ -145,7 +112,7 @@ export function ProfileSetupPage() {
     }
   };
 
-  if (loading) {
+  if (!verified) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-slate-400 text-sm">불러오는 중...</p>
@@ -153,7 +120,7 @@ export function ProfileSetupPage() {
     );
   }
 
-  const initial = pending?.nickname?.[0]?.toUpperCase() ?? "?";
+  const initial = verified.nickname?.[0]?.toUpperCase() ?? "?";
 
   return (
     <div className="min-h-screen px-6 py-7 bg-white">
@@ -162,7 +129,7 @@ export function ProfileSetupPage() {
         <div className="flex items-center justify-between mb-3">
           <div className="w-9" />
           <span className="text-sm font-medium text-slate-900">프로필 설정</span>
-          <span className="text-xs text-slate-400 w-9 text-right">3 / 3</span>
+          <span className="text-xs text-slate-400 w-9 text-right">4 / 4</span>
         </div>
         <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
           <div className="h-full bg-primary rounded-full w-full transition-all duration-300" />
@@ -177,7 +144,7 @@ export function ProfileSetupPage() {
       </div>
 
       <h1 className="text-xl font-bold text-slate-900 text-center leading-snug mb-1">
-        간단한 프로필을 만들어요
+        마지막으로 확인해주세요
       </h1>
       <p className="text-sm text-slate-500 text-center mb-7 leading-relaxed">
         학교는 항상 공개돼요. 나머지는 필터 기준이에요.
@@ -197,12 +164,24 @@ export function ProfileSetupPage() {
           )}
         </div>
 
+        {/* 학교 인증 이메일 — 인증 완료, 수정 불가 */}
+        <div>
+          <label className="text-sm text-slate-500 block mb-1.5">학교</label>
+          <input
+            className="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm text-slate-600 cursor-not-allowed"
+            value={`${verified.schoolName} · ${verified.email}`}
+            disabled
+            readOnly
+          />
+          <p className="text-xs text-slate-400 mt-1">이메일 인증이 완료된 학교예요.</p>
+        </div>
+
         {/* 성별 — 비활성 */}
         <div>
           <label className="text-sm text-slate-500 block mb-1.5">성별</label>
           <input
             className="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm text-slate-400 cursor-not-allowed"
-            value={pending?.gender ? GENDER_LABEL[pending.gender] : "네이버에서 제공하지 않음"}
+            value={verified.gender ? GENDER_LABEL[verified.gender] : "네이버에서 제공하지 않음"}
             disabled
             readOnly
           />
@@ -214,30 +193,11 @@ export function ProfileSetupPage() {
           <label className="text-sm text-slate-500 block mb-1.5">출생연도</label>
           <input
             className="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm text-slate-400 cursor-not-allowed"
-            value={pending?.birthYear ?? "네이버에서 제공하지 않음"}
+            value={verified.birthYear ?? "네이버에서 제공하지 않음"}
             disabled
             readOnly
           />
           <p className="text-xs text-slate-400 mt-1">네이버 계정 정보에서 자동으로 가져옵니다.</p>
-        </div>
-
-        {/* 학교 */}
-        <div>
-          <label className="text-sm text-slate-500 block mb-1.5">학교</label>
-          <select
-            {...register("schoolId")}
-            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white outline-none focus:border-primary"
-          >
-            <option value="">학교를 선택해주세요</option>
-            {schools.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          {errors.schoolId && (
-            <p className="text-xs text-red-500 mt-1">{errors.schoolId.message}</p>
-          )}
         </div>
 
         {/* 현재 파견 국가 */}

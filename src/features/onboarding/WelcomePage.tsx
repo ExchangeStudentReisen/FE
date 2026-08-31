@@ -1,9 +1,6 @@
-import { useNavigate } from "react-router-dom";
 import { BoardingPassCard } from "./BoardingPassCard";
 
 export function WelcomePage() {
-  const navigate = useNavigate();
-
   return (
     <div className='flex flex-col min-h-screen p-6 pb-12 bg-linear-to-b from-primary-light to-white'>
       <div className='flex items-center gap-2'>
@@ -32,14 +29,7 @@ export function WelcomePage() {
 
       <div className='flex flex-col gap-2'>
         <button
-          onClick={() => navigate("/onboarding/school")}
-          className='w-full py-3 rounded-xl bg-primary text-white font-medium'
-        >
-          학교 이메일로 시작하기
-        </button>
-        <button
           onClick={() => {
-            console.log("hi");
             window.location.href = "http://localhost:8080/api/auth/naver";
           }}
           className='w-full h-11 rounded-xl bg-[#03C75A] flex items-center justify-center gap-2'
