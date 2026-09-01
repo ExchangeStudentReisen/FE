@@ -19,18 +19,17 @@ export interface FeedItem {
   view: number
   clickCnt: number
   updatedAt: string // ISO datetime
-
-  // 화면 전용 파생값 — 백엔드 응답엔 없음
-  category: string // TODO: 필터용 — 실제 쓰임 확정 필요
-  month: string // TODO: 필터용 — startDate에서 추출해서 만드는 게 나을 수도 있음
 }
 
 export interface FeedFilters {
-  category: string
-  month: string
-  gender: string
-  sort: 'latest' | 'popular'
-  keyword: string
+  travelCity?: string // undefined/null이면 전체
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' // undefined/null이면 전체
+  startAge?: number
+  endAge?: number
+  startDate?: string // ISO date
+  endDate?: string
+  sort: 'latest' | 'popular' // TODO: API 파라미터에 없음 — 프론트에서 정렬하거나 백엔드 확인 필요
+  keyword: string // TODO: API 파라미터에 없음 — 검색창 텍스트를 travelCity 매칭으로 쓸지, 프론트 필터로만 쓸지 확인 필요
 }
 
 export interface FeedPageResult {
@@ -40,7 +39,6 @@ export interface FeedPageResult {
 
 // 필터 UI에 들어갈 옵션들 — 실제 값은 사용하는 쪽에서 정의
 export interface FeedFilterOptions {
-  categories: { key: string; label: string }[]
-  months: string[]
-  genders: string[]
+  countries: { value: string; label: string }[] // getCountryOptions()로 채움
+  genders: { value: 'MALE' | 'FEMALE' | 'OTHER'; label: string }[]
 }
