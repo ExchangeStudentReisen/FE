@@ -10,13 +10,11 @@ const ALL_ITEMS: FeedItem[] = [
     gender: 'FEMALE',
     startDate: '2026-06-04',
     endDate: '2026-06-05',
-    travelCity: 'CZECH', // TODO: 실제 백엔드 enum 값으로 교체
+    travelCity: 'CZECH_REPUBLIC', // 교정: CZECH -> CZECH_REPUBLIC
     isRecruiting: true,
     view: 40,
     clickCnt: 40,
     updatedAt: new Date(Date.now() - 15 * 60_000).toISOString(),
-    category: 'prague',
-    month: '6월',
   },
   {
     id: 2,
@@ -32,8 +30,6 @@ const ALL_ITEMS: FeedItem[] = [
     view: 55,
     clickCnt: 55,
     updatedAt: new Date(Date.now() - 60 * 60_000).toISOString(),
-    category: 'vienna',
-    month: '6월',
   },
   {
     id: 3,
@@ -49,8 +45,6 @@ const ALL_ITEMS: FeedItem[] = [
     view: 30,
     clickCnt: 30,
     updatedAt: new Date(Date.now() - 3 * 60 * 60_000).toISOString(),
-    category: 'paris',
-    month: '6월',
   },
   {
     id: 4,
@@ -66,10 +60,8 @@ const ALL_ITEMS: FeedItem[] = [
     view: 18,
     clickCnt: 18,
     updatedAt: new Date(Date.now() - 5 * 60 * 60_000).toISOString(),
-    category: 'budapest',
-    month: '6월',
   },
-    {
+  {
     id: 5,
     title: '뮌헨 옥토버페스트 같이 즐기실 분',
     content: '맥주 축제 기간에 같이 다닐 분 구해요. 숙소는 각자, 낮에만 같이 다녀도 좋아요. 독일어 몰라도 상관없어요.', // 40자 초과 - truncate 테스트
@@ -83,8 +75,6 @@ const ALL_ITEMS: FeedItem[] = [
     view: 72,
     clickCnt: 72,
     updatedAt: new Date(Date.now() - 30 * 60_000).toISOString(),
-    category: 'munich',
-    month: '9월',
   },
   {
     id: 6,
@@ -100,8 +90,6 @@ const ALL_ITEMS: FeedItem[] = [
     view: 15,
     clickCnt: 15,
     updatedAt: new Date(Date.now() - 2 * 60_000).toISOString(), // 방금 전 테스트
-    category: 'rome',
-    month: '7월',
   },
   {
     id: 7,
@@ -117,8 +105,6 @@ const ALL_ITEMS: FeedItem[] = [
     view: 120,
     clickCnt: 120,
     updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60_000).toISOString(), // 2일 전 테스트
-    category: 'amsterdam',
-    month: '6월',
   },
   {
     id: 8,
@@ -134,8 +120,6 @@ const ALL_ITEMS: FeedItem[] = [
     view: 8,
     clickCnt: 8,
     updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60_000).toISOString(), // 오래된 글 테스트
-    category: 'barcelona',
-    month: '8월',
   },
   {
     id: 9,
@@ -146,13 +130,11 @@ const ALL_ITEMS: FeedItem[] = [
     gender: 'MALE',
     startDate: '2026-06-25',
     endDate: '2026-06-26',
-    travelCity: 'UK',
+    travelCity: 'UNITED_KINGDOM', // 교정: UK -> UNITED_KINGDOM
     isRecruiting: true,
     view: 45,
     clickCnt: 45,
     updatedAt: new Date(Date.now() - 6 * 60 * 60_000).toISOString(),
-    category: 'london',
-    month: '6월',
   },
   {
     id: 10,
@@ -168,8 +150,6 @@ const ALL_ITEMS: FeedItem[] = [
     view: 3,
     clickCnt: 3, // 조회수 0에 가까운 케이스 테스트
     updatedAt: new Date(Date.now() - 12 * 60 * 60_000).toISOString(),
-    category: 'krakow',
-    month: '6월',
   },
 ]
 
@@ -180,21 +160,40 @@ export async function fetchFeed(pageParam: number, filters: FeedFilters): Promis
 
   let filtered = ALL_ITEMS
 
-  if (filters.category !== 'all') {
-    filtered = filtered.filter((item) => item.category === filters.category)
+  if (filters.travelCity) {
+    filtered = filtered.filter((item) => item.travelCity === filters.travelCity)
   }
-  if (filters.month !== '전체') {
-    filtered = filtered.filter((item) => item.month === filters.month)
+
+  if (filters.gender) {
+    // 글쪽 gender가 null(성별무관)이면 어떤 성별 필터에도 통과
+    filtered = filtered.filter((item) => item.gender === null || item.gender === filters.gender)
   }
+
+  if (filters.startAge !== undefined) {
+    filtered = filtered.filter((item) => item.endAge >= filters.startAge!)
+  }
+  if (filters.endAge !== undefined) {
+    filtered = filtered.filter((item) => item.startAge <= filters.endAge!)
+  }
+
+  if (filters.startDate) {
+    filtered = filtered.filter((item) => item.endDate >= filters.startDate!)
+  }
+  if (filters.endDate) {
+    filtered = filtered.filter((item) => item.startDate <= filters.endDate!)
+  }
+
+  // TODO: keyword는 API 파라미터가 아니라 프론트에서 자체 필터링 중 — 백엔드 검색 파라미터 추가되면 쿼리로 이전
   if (filters.keyword.trim()) {
     const keyword = filters.keyword.trim().toLowerCase()
     filtered = filtered.filter((item) => item.title.toLowerCase().includes(keyword))
   }
 
+  // TODO: sort도 API 파라미터가 아니라 프론트 자체 정렬 — 인기순 기준은 view로 처리
   filtered = [...filtered].sort((a, b) =>
     filters.sort === 'latest'
       ? new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      : b.clickCnt - a.clickCnt
+      : b.view - a.view
   )
 
   const start = pageParam * PAGE_SIZE
