@@ -8,6 +8,8 @@ import { useInfiniteScrollTrigger } from '../../hooks/useInfiniteScrollerTrigger
 import { matchesQuery } from '../../utils/hangul'
 import { getCountryOptions } from '../../utils/cityMeta'
 import type { FeedFilterOptions, FeedFilters } from '../../types/feed'
+import { useMyProfile } from '../../hooks/useMyProfile'
+import { isEligibleForPost } from '../../utils/eligibility'
 
 const FILTER_OPTIONS: FeedFilterOptions = {
   countries: getCountryOptions(),
@@ -38,12 +40,13 @@ export function FeedPage() {
 
   const sentinelRef = useInfiniteScrollTrigger(() => fetchNextPage(), !!hasNextPage && !isFetchingNextPage)
 
+  const { data: myProfile } = useMyProfile()
+  const [onlyEligible, setOnlyEligible] = useState(false)
+
   const items = data?.pages.flatMap((page) => page.items) ?? []
 
-  // TODO: '전체' 판정 조건은 정의한 옵션 값에 맞춰 조정
-  const activeFilterCount =
-    (filters.startAge !== undefined || filters.endAge !== undefined ? 1 : 0) +
-    (filters.startDate !== undefined || filters.endDate !== undefined ? 1 : 0)
+  const visibleItems =
+    onlyEligible && myProfile ? items.filter((item) => isEligibleForPost(myProfile, item)) : items
 
   const suggestions = searchInput.trim()
     ? getCountryOptions().filter((c) => matchesQuery(searchInput.trim(), c.label))
@@ -112,10 +115,9 @@ export function FeedPage() {
         filters={filters}
         options={FILTER_OPTIONS}
         onChange={setFilters}
-        onOpenFilterSheet={() => {
-          // TODO: 상세 필터 바텀시트 연결
-        }}
-        activeFilterCount={activeFilterCount}
+        onlyEligible={onlyEligible}
+        onToggleEligible={() => setOnlyEligible((prev) => !prev)}
+        eligibilityDisabled={!myProfile}
       />
 
       <div className="px-4 flex flex-col gap-3 mt-2">
@@ -124,11 +126,11 @@ export function FeedPage() {
             <div key={i} className="h-24 rounded-xl bg-slate-100 animate-pulse" />
           ))}
 
-        {!isLoading && items.length === 0 && (
+        {!isLoading && visibleItems.length === 0 && (
           <p className="text-center text-sm text-slate-400 py-10">조건에 맞는 동행이 없어요.</p>
         )}
 
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <FeedPostCard
             key={item.id}
             id={item.id}
