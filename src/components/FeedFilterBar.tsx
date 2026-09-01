@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, SlidersHorizontal } from 'lucide-react'
+import { ChevronDown, SlidersHorizontal, MapPin, User } from 'lucide-react'
 import type { FeedFilterOptions, FeedFilters } from '../types/feed'
 
 interface Props {
@@ -11,43 +11,36 @@ interface Props {
 }
 
 export function FeedFilterBar({ filters, options, onChange, onOpenFilterSheet, activeFilterCount }: Props) {
-  const [openDropdown, setOpenDropdown] = useState<'month' | 'gender' | null>(null)
+  const [openDropdown, setOpenDropdown] = useState<'country' | 'gender' | null>(null)
+
+  const countryLabel =
+    options.countries.find((c) => c.value === filters.travelCity)?.label ?? '전체'
+  const genderLabel =
+    options.genders.find((g) => g.value === filters.gender)?.label ?? '전체'
 
   return (
     <div className="px-4">
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3">
-        {options.categories.map((c) => (
-          <button
-            key={c.key}
-            onClick={() => onChange({ ...filters, category: c.key })}
-            className={`shrink-0 cursor-pointer px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              filters.category === c.key ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'
-            }`}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-center gap-2">
           <Dropdown
-            label={filters.month}
-            options={options.months}
-            isOpen={openDropdown === 'month'}
-            onToggle={() => setOpenDropdown((prev) => (prev === 'month' ? null : 'month'))}
-            onSelect={(v) => {
-              onChange({ ...filters, month: v })
+            icon={<MapPin size={14} />}
+            label={countryLabel}
+            options={[{ value: '', label: '전체' }, ...options.countries]}
+            isOpen={openDropdown === 'country'}
+            onToggle={() => setOpenDropdown((prev) => (prev === 'country' ? null : 'country'))}
+            onSelect={(value) => {
+              onChange({ ...filters, travelCity: value || undefined })
               setOpenDropdown(null)
             }}
           />
           <Dropdown
-            label={filters.gender}
-            options={options.genders}
+            icon={<User size={14} />}
+            label={genderLabel}
+            options={[{ value: '', label: '전체' }, ...options.genders]}
             isOpen={openDropdown === 'gender'}
             onToggle={() => setOpenDropdown((prev) => (prev === 'gender' ? null : 'gender'))}
-            onSelect={(v) => {
-              onChange({ ...filters, gender: v })
+            onSelect={(value) => {
+              onChange({ ...filters, gender: (value || undefined) as FeedFilters['gender'] })
               setOpenDropdown(null)
             }}
           />
@@ -72,14 +65,16 @@ export function FeedFilterBar({ filters, options, onChange, onOpenFilterSheet, a
 }
 
 function Dropdown({
+  icon,
   label,
   options,
   isOpen,
   onToggle,
   onSelect,
 }: {
+  icon: React.ReactNode
   label: string
-  options: string[]
+  options: { value: string; label: string }[]
   isOpen: boolean
   onToggle: () => void
   onSelect: (value: string) => void
@@ -88,20 +83,21 @@ function Dropdown({
     <div className="relative">
       <button
         onClick={onToggle}
-        className="cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-full border border-slate-200 text-sm text-slate-600"
+        className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-sm text-slate-600"
       >
+        {icon}
         {label}
         <ChevronDown size={14} />
       </button>
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 z-10 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-[100px]">
+        <div className="absolute top-full left-0 mt-1 z-10 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-30 max-h-64 overflow-y-auto">
           {options.map((opt) => (
             <button
-              key={opt}
-              onClick={() => onSelect(opt)}
+              key={opt.value || 'all'}
+              onClick={() => onSelect(opt.value)}
               className="cursor-pointer block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
             >
-              {opt}
+              {opt.label}
             </button>
           ))}
         </div>
