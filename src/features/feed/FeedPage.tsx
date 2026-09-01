@@ -1,23 +1,30 @@
 import { useState } from 'react'
+import { Search } from 'lucide-react'
 import { Header } from '../../components/Header'
 import { FeedFilterBar } from '../../components/FeedFilterBar'
 import { FeedPostCard } from '../../components/FeedPostCard'
 import { useInfiniteFeed } from '../../hooks/useInfiniteFeed'
 import { useInfiniteScrollTrigger } from '../../hooks/useInfiniteScrollerTrigger'
+import { matchesQuery } from '../../utils/hangul'
+import { getCountryOptions } from '../../utils/cityMeta'
 import type { FeedFilterOptions, FeedFilters } from '../../types/feed'
 
-// TODO: 실제 카테고리/월/성별 옵션으로 채우기
 const FILTER_OPTIONS: FeedFilterOptions = {
-  categories: [],
-  months: [],
-  genders: [],
+  countries: getCountryOptions(),
+  genders: [
+    { value: 'FEMALE', label: '여성만' },
+    { value: 'MALE', label: '남성만' },
+    { value: 'OTHER', label: '성별무관' },
+  ],
 }
 
-// TODO: 초기 필터값 정의 (categories/months/genders의 '전체' 대응 값에 맞춰서)
 const DEFAULT_FILTERS: FeedFilters = {
-  category: 'all',
-  month: '전체',
-  gender: '전체',
+  travelCity: undefined,
+  gender: undefined,
+  startAge: undefined,
+  endAge: undefined,
+  startDate: undefined,
+  endDate: undefined,
   sort: 'latest',
   keyword: '',
 }
@@ -25,6 +32,7 @@ const DEFAULT_FILTERS: FeedFilters = {
 export function FeedPage() {
   const [filters, setFilters] = useState<FeedFilters>(DEFAULT_FILTERS)
   const [searchInput, setSearchInput] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteFeed(filters)
 
@@ -34,12 +42,23 @@ export function FeedPage() {
 
   // TODO: '전체' 판정 조건은 정의한 옵션 값에 맞춰 조정
   const activeFilterCount =
-    (filters.month !== DEFAULT_FILTERS.month ? 1 : 0) +
-    (filters.gender !== DEFAULT_FILTERS.gender ? 1 : 0)
+    (filters.startAge !== undefined || filters.endAge !== undefined ? 1 : 0) +
+    (filters.startDate !== undefined || filters.endDate !== undefined ? 1 : 0)
+
+  const suggestions = searchInput.trim()
+    ? getCountryOptions().filter((c) => matchesQuery(searchInput.trim(), c.label))
+    : []
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFilters((prev) => ({ ...prev, keyword: searchInput }))
+    setShowSuggestions(false)
+  }
+
+  function handleSelectCountry(label: string) {
+    setSearchInput(label)
+    setShowSuggestions(false)
+    // TODO: FeedFilters에 country 필드 추가 후 여기서 setFilters로 실제 필터 연동
   }
 
   return (
@@ -53,13 +72,38 @@ export function FeedPage() {
             <br />
             같이 가볼까요?
           </h1>
-          <form onSubmit={handleSearchSubmit} className="mt-3">
+          <form onSubmit={handleSearchSubmit} className="relative mt-3"> {/* className에 relative 추가 */}
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+              size={16}
+              strokeWidth={2}
+            /> {/* 추가 */}
             <input
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs shadow-sm bg-white"
+              onChange={(e) => {
+                setSearchInput(e.target.value)
+                setShowSuggestions(true) // 추가
+              }}
+              onFocus={() => setShowSuggestions(true)} // 추가
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // 추가
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs shadow-sm bg-white" // px-4 → pl-10 pr-4 (아이콘 자리 확보)
               placeholder="도시, 날짜로 동행 찾기"
             />
+
+            {showSuggestions && suggestions.length > 0 && ( // 추가
+              <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                {suggestions.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => handleSelectCountry(c.label)}
+                    className="cursor-pointer block w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </form>
         </header>
       </div>
