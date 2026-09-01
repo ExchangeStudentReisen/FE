@@ -28,7 +28,7 @@ export function FeedFilterBar({
 
   return (
     <div className="px-4 pt-3">
-      <div className="flex items-center gap-1.5 pb-3">
+      <div className="flex items-center gap-1.5 pb-2">
         <Dropdown
           icon={<MapPin size={14} />}
           label={countryLabel}
@@ -65,12 +65,13 @@ export function FeedFilterBar({
             setOpenDropdown(null)
           }}
         />
+      </div>
 
+      <div className="flex items-center justify-between pb-3">
         <button
           onClick={onToggleEligible}
           disabled={eligibilityDisabled}
-          className={`bg-white shrink-0 cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs whitespace-nowrap transition-colors disabled:opacity-40
-            ${onlyEligible ? 'border-sky-500 bg-sky-50 text-sky-600' : 'border-slate-200 text-slate-600'}`}
+          className="shrink-0 cursor-pointer flex items-center gap-1.5 text-sm text-slate-600 whitespace-nowrap disabled:opacity-40"
         >
           <span
             className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors
@@ -83,9 +84,7 @@ export function FeedFilterBar({
           </span>
           내 조건만
         </button>
-      </div>
 
-      <div className="flex justify-end pb-3">
         <button
           onClick={() => onChange({ ...filters, sort: filters.sort === 'latest' ? 'popular' : 'latest' })}
           className="cursor-pointer text-sm text-slate-500"
