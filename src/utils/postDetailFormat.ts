@@ -10,16 +10,20 @@ const CITY_META: Record<TripCity, { flag: string; label: string }> = {
   SPAIN: { flag: '🇪🇸', label: 'Spain' },
 }
 
-const GENDER_LABEL: Record<RecruitGender, string> = {
+const GENDER_LABEL: Record<'MALE' | 'FEMALE' | 'OTHER', string> = {
   FEMALE: '여성만',
   MALE: '남성만',
+  OTHER: '성별무관',
 }
 
-export function getCityMeta(city: TripCity) {
-  return CITY_META[city] ?? { flag: '🌍', label: city }
+// city는 피드 쪽에서 string으로 넘어올 수도 있어서 넓게 받음
+export function getCityMeta(city: string) {
+  return CITY_META[city as TripCity] ?? { flag: '🌍', label: city }
 }
 
-export function getGenderLabel(gender: RecruitGender) {
+// gender는 null(전체)까지 받도록 확장
+export function getGenderLabel(gender: RecruitGender | 'OTHER' | null) {
+  if (!gender) return '성별무관'
   return GENDER_LABEL[gender] ?? gender
 }
 
