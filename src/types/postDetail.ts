@@ -1,7 +1,7 @@
 // types/postDetail.ts
 
 // TODO: 백엔드 enum 값 전체 목록 확인 필요 (지금은 예시로 유추한 값)
-export type TripCity =
+export type TravelCity =
   | 'GERMANY'
   | 'FRANCE'
   | 'ITALY'
@@ -16,6 +16,8 @@ export interface PostDetailApiData {
   id: number
   authorId: number
   authorName: string
+  authorBirthYear: number
+  authorGender: RecruitGender
   title: string
   content: string
   kakaotalkLink: string
@@ -25,7 +27,7 @@ export interface PostDetailApiData {
   gender: RecruitGender
   startDate: string // 'YYYY-MM-DD'
   endDate: string
-  tripCity: TripCity
+  travelCity: TravelCity
   isRecruiting: boolean
   view: number
   clickCnt: number
