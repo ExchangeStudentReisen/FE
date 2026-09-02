@@ -1,3 +1,5 @@
+import kakaoLogo from '../assets/kakaotalk_sharing_btn_medium.png'
+
 interface KakaoChatModalProps {
   open: boolean
   onClose: () => void
@@ -22,9 +24,7 @@ export function KakaoChatModal({ open, onClose, authorName, chatUrl }: KakaoChat
         className="w-full max-w-sm rounded-2xl bg-white p-6 text-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-400 text-2xl font-bold text-white">
-          K
-        </div>
+      <img src={kakaoLogo} alt="카카오톡" className="mx-auto mb-4 h-14 w-14" />
 
         <h2 className="text-lg font-bold text-slate-900">카카오 오픈채팅으로 이동</h2>
         <p className="mt-1 text-sm text-slate-500">
