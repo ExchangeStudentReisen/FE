@@ -28,7 +28,7 @@ export function Header() {
   const label = getLabel(pathname)
 
   return (
-    <div className="flex items-center justify-between px-4 py-3">
+    <div className="mx-auto flex max-w-107.5 items-center px-4 py-3">
       {/* 로고: 홈에서는 풀 워드마크, 상세 페이지에서는 뒤로가기, 그 외엔 배지 + 페이지명 */}
       <div className="flex items-center gap-2">
         {showBack && (
@@ -40,18 +40,22 @@ export function Header() {
             <ArrowLeft size={20} />
           </button>
         )}
-        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <span className="text-white text-m font-bold">R</span>
-        </div>
-        {isHome ? (
-          <span className="text-primary font-bold text-lg">Reisen</span>
-        ) : (
-          <span className="text-slate-900 font-bold text-lg">{label}</span>
+        {!showBack && (
+          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <span className="text-white text-m font-bold">R</span>
+          </div>
+        )}
+        {!showBack && (
+          isHome ? (
+            <span className="text-primary font-bold text-lg">Reisen</span>
+          ) : (
+            <span className="text-slate-900 font-bold text-lg">{label}</span>
+          )
         )}
       </div>
 
       {/* 우측 상단 네비게이션 */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 ml-auto shrink-0">
         <button
           onClick={() => navigate('/post/new')}
           className={`cursor-pointer w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
