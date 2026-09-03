@@ -18,8 +18,8 @@ body {
 
 /* 모바일 브라우저 최적화: 최대 폭을 앱처럼 제한 */
 #root {
-  max-width: 480px;
-  margin: 0 auto;
+  /*max-width: 480px;
+  margin: 0 auto;*/
   min-height: 100vh;
-  background-color: #ffffff;
+  /*background-color: #ffffff;*/
 }

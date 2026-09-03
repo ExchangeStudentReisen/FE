@@ -2,12 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import type { UserProfile } from '../types/user'
 
 // TODO: 백엔드 연동 시 아래 fetchMyProfile을 실제 fetch('/api/members/me')로 교체
-const MOCK_MY_PROFILE: UserProfile = {
+export const MOCK_MY_PROFILE: UserProfile = {
   id: 1,
   name: '김바보',
   email: 'baboo@example.com',
-  gender: 'FEMALE',
-  birthYear: 1997,
+  gender: 'MALE',
+  birthYear: 2001,
   dispatchCountry: 'GERMANY',
   emailVerified: true,
   schoolId: 1,
