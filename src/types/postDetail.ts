@@ -20,7 +20,6 @@ export interface PostDetailApiData {
   authorGender: RecruitGender
   title: string
   content: string
-  kakaotalkLink: string
   maxMembers: number
   startAge: number
   endAge: number

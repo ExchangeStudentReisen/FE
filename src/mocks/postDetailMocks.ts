@@ -15,7 +15,6 @@ export const POST_DETAIL_MOCKS: Record<string, PostDetailResponse> = {
       title: '프라하 같이 다니실 여성분 구해요',
       content:
         '6/4 오후 5시 프라하 도착해서 카를교 야경이랑 구시가 광장 저녁 먹을 예정이에요.\n6/5 오전 9시부터 프라하 성 투어 돌고 오후는 자유시간입니다.\n같이 다니실 여성분 구해요!',
-      kakaotalkLink: 'https://open.kakao.com/o/g/prg604',
       maxMembers: 3,
       startAge: 20,
       endAge: 23,
@@ -44,7 +43,6 @@ export const POST_DETAIL_MOCKS: Record<string, PostDetailResponse> = {
       title: '파리 3박 같이 여행하실 분 찾아요',
       content:
         '루브르 박물관, 몽마르뜨 언덕, 베르사유 궁전, 에펠탑까지 알차게 도는 3박 4일 일정입니다.\n같이 다니실 분 편하게 연락 주세요!',
-      kakaotalkLink: 'https://open.kakao.com/o/g/prs901',
       maxMembers: 4,
       startAge: 22,
       endAge: 27,
@@ -72,7 +70,6 @@ export const POST_DETAIL_MOCKS: Record<string, PostDetailResponse> = {
       authorGender: 'FEMALE',
       title: '로마 당일치기 동행 구해요 (급구)',
       content: '콜로세움, 트레비 분수, 판테온 도는 당일치기예요. 오전 8시 출발합니다.',
-      kakaotalkLink: 'https://open.kakao.com/o/g/rom222',
       maxMembers: 2,
       startAge: 20,
       endAge: 24,

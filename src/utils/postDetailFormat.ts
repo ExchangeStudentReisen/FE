@@ -1,5 +1,5 @@
-// utils/postDetailFormat.ts
-import type { RecruitGender, TravelCity } from '../types/postDetail'
+import type { TravelCity, RecruitGender } from '../types/postDetail'
+
 
 const CITY_META: Record<TravelCity, { flag: string; label: string }> = {
   GERMANY: { flag: '🇩🇪', label: 'Germany' },
@@ -16,12 +16,10 @@ const GENDER_LABEL: Record<'MALE' | 'FEMALE' | 'OTHER', string> = {
   OTHER: '성별무관',
 }
 
-// city는 피드 쪽에서 string으로 넘어올 수도 있어서 넓게 받음
 export function getCityMeta(city: string) {
   return CITY_META[city as TravelCity] ?? { flag: '🌍', label: city }
 }
 
-// gender는 null(전체)까지 받도록 확장
 export function getGenderLabel(gender: RecruitGender | 'OTHER' | null) {
   if (!gender) return '성별무관'
   return GENDER_LABEL[gender] ?? gender
@@ -50,4 +48,8 @@ export function formatUpdatedDate(updatedAt: string): string {
   const mm = String(date.getMonth() + 1).padStart(2, '0')
   const dd = String(date.getDate()).padStart(2, '0')
   return `${yyyy}.${mm}.${dd}`
+}
+
+export function formatAgeFromBirthYear(birthYear: number): number {
+  return new Date().getFullYear() - birthYear
 }
