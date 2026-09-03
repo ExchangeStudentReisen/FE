@@ -65,7 +65,7 @@ export function FeedPage() {
   }
 
   return (
-    <div className="pb-8">
+    <div className="mx-auto max-w-107.5 pb-8">
       <div className="bg-linear-to-b from-indigo-100 via-blue-50 to-white border-b border-slate-100">
         <Header />
         <header className="px-4 pb-4">
@@ -111,16 +111,18 @@ export function FeedPage() {
         </header>
       </div>
 
-      <FeedFilterBar
-        filters={filters}
-        options={FILTER_OPTIONS}
-        onChange={setFilters}
-        onlyEligible={onlyEligible}
-        onToggleEligible={() => setOnlyEligible((prev) => !prev)}
-        eligibilityDisabled={!myProfile}
-      />
+      <div className='bg-[#f7fafe]'>
+        <FeedFilterBar
+          filters={filters}
+          options={FILTER_OPTIONS}
+          onChange={setFilters}
+          onlyEligible={onlyEligible}
+          onToggleEligible={() => setOnlyEligible((prev) => !prev)}
+          eligibilityDisabled={!myProfile}
+        />
+      </div>
 
-      <div className="px-4 flex flex-col gap-3 mt-2">
+      <div className="px-4 flex flex-col gap-3 pt-2 bg-[#f7fafe]">
         {isLoading &&
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-24 rounded-xl bg-slate-100 animate-pulse" />
