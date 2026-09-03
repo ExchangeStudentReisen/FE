@@ -1,16 +1,24 @@
 import kakaoLogo from '../assets/kakaotalk_sharing_btn_medium.png'
+import { useChatLink } from '../hooks/useChatLink'
 
 interface KakaoChatModalProps {
   open: boolean
   onClose: () => void
   authorName: string
-  chatUrl: string
+  postId: string
+  memberId?: number
 }
 
-export function KakaoChatModal({ open, onClose, authorName, chatUrl }: KakaoChatModalProps) {
+export function KakaoChatModal({ open, onClose, authorName, postId, memberId }: KakaoChatModalProps) {
+  const { data, isLoading } = useChatLink(postId, memberId, open)
+
   if (!open) return null
 
+  const chatUrl = data?.result === 'SUCCESS' ? data.data?.kakaotalkLink : undefined
+  const isEligible = !isLoading && !!chatUrl
+
   function handleEnter() {
+    if (!chatUrl) return
     window.open(chatUrl, '_blank', 'noopener,noreferrer')
     onClose()
   }
@@ -24,7 +32,7 @@ export function KakaoChatModal({ open, onClose, authorName, chatUrl }: KakaoChat
         className="w-full max-w-sm rounded-2xl bg-white p-6 text-center"
         onClick={(e) => e.stopPropagation()}
       >
-      <img src={kakaoLogo} alt="카카오톡" className="mx-auto mb-4 h-14 w-14" />
+        <img src={kakaoLogo} alt="카카오톡" className="mx-auto mb-4 h-14 w-14" />
 
         <h2 className="text-lg font-bold text-slate-900">카카오 오픈채팅으로 이동</h2>
         <p className="mt-1 text-sm text-slate-500">
@@ -39,16 +47,29 @@ export function KakaoChatModal({ open, onClose, authorName, chatUrl }: KakaoChat
           </p>
         </div>
 
-        <div className="mt-3 flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-600">
-          <span>🔗</span>
-          <span className="truncate">{chatUrl.replace('https://', '')}</span>
-        </div>
+        {isEligible ? (
+          <div className="mt-3 flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-600">
+            <span>🔗</span>
+            <span className="truncate">{chatUrl.replace('https://', '')}</span>
+          </div>
+        ) : (
+          !isLoading && (
+            <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-400">
+              {data?.message ?? '모집 요건에 맞지 않아 채팅방에 입장할 수 없어요.'}
+            </p>
+          )
+        )}
 
         <button
           onClick={handleEnter}
-          className="mt-4 w-full rounded-xl bg-[#FEE500] py-3 text-sm font-bold text-slate-900"
+          disabled={!isEligible}
+          className={`mt-4 w-full rounded-xl py-3 text-sm font-bold ${
+            isEligible
+              ? 'bg-[#FEE500] text-slate-900'
+              : 'cursor-not-allowed bg-slate-200 text-slate-400'
+          }`}
         >
-          채팅방 입장하기
+          {isLoading ? '확인 중...' : '채팅방 입장하기'}
         </button>
         <button
           onClick={onClose}
