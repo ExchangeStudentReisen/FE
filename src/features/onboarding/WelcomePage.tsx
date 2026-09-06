@@ -31,12 +31,14 @@ export function WelcomePage() {
 
       <div className="flex flex-col gap-2">
         <button
-          onClick={() => alert('카카오 로그인은 백엔드 연결 후 구현 예정입니다.')}
+          onClick={() => {
+            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/naver`
+          }}
           className="w-full h-14 rounded-xl overflow-hidden"
         >
           <img
             src={naverLoginButton}
-            alt="카카오 로그인"
+            alt="네이버 로그인"
             className="w-full h-full object-fill"
           />
         </button>
