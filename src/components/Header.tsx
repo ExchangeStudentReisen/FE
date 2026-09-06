@@ -1,5 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, User } from 'lucide-react'
+import { ArrowLeft, Plus, User, X } from 'lucide-react'
+import { useAuthTokenStore } from '../stores/authTokenStore'
+import { useLogout } from '../hooks/useAuth'
 
 const PAGE_LABEL: Record<string, string> = {
   '/feed': 'Reisen',
@@ -23,9 +25,15 @@ function isPostDetail(pathname: string) {
 export function Header() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const logout = useLogout()
   const isHome = pathname === '/feed'
   const showBack = isPostDetail(pathname)
   const label = getLabel(pathname)
+
+  const handleLogout = async () => {
+    await logout.mutateAsync()
+    navigate('/', { replace: true })
+  }
 
   return (
     <div className="mx-auto flex max-w-107.5 items-center px-4 py-3">
@@ -57,6 +65,17 @@ export function Header() {
       {/* 우측 상단 네비게이션 */}
       <div className="flex items-center gap-3 ml-auto shrink-0">
         <button
+          onClick={() => navigate('/profile')}
+          className={`cursor-pointer w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+            pathname.startsWith('/profile')
+              ? 'bg-primary text-white'
+              : 'bg-slate-100 text-slate-500'
+          }`}
+          aria-label="프로필 페이지"
+        >
+          <User size={18} />
+        </button>
+        <button
           onClick={() => navigate('/post/new')}
           className={`cursor-pointer w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
             pathname.startsWith('/post/new')
@@ -68,15 +87,11 @@ export function Header() {
           <Plus size={18} />
         </button>
         <button
-          onClick={() => navigate('/profile')}
-          className={`cursor-pointer w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-            pathname.startsWith('/profile')
-              ? 'bg-primary text-white'
-              : 'bg-slate-100 text-slate-500'
-          }`}
-          aria-label="프로필 페이지"
+          onClick={handleLogout}
+          className="cursor-pointer w-9 h-9 rounded-full flex items-center justify-center bg-slate-100 text-slate-500"
+          aria-label="로그아웃"
         >
-          <User size={18} />
+          <X size={18} />
         </button>
       </div>
     </div>
