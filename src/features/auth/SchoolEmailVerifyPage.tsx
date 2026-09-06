@@ -3,8 +3,12 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
-import { sendVerificationEmail, verifySchoolEmailCode } from '../../api/schoolEmailAuth'
-import { SCHOOLS, type School } from './schools'
+import { useSendVerification, useVerifyCode } from '../../hooks/useVerfication'
+import { useSignup } from '../../hooks/useAuth'
+import { useSignupStore } from '../../stores/signupStore'
+import { useSchools } from '../../hooks/useSchools'
+import type { School } from '../../types/school'
+import type { VerifiedProfileData } from '../../types/verfication'
 
 // 영문자 1개 이상 포함 + 영문/숫자만 허용
 const LOCAL_PART_REGEX = /^(?=.*[a-zA-Z])[a-zA-Z0-9]{2,}$/
@@ -17,22 +21,33 @@ const emailSchema = z.object({
 })
 type EmailForm = z.infer<typeof emailSchema>
 
-type Step = 'school' | 'email' | 'code' | 'done'
+// TODO: 실제 dispatchCountry enum 전체 목록으로 교체 예정
+const DISPATCH_COUNTRIES = [
+  { value: 'GERMANY', label: '독일' },
+  { value: 'FRANCE', label: '프랑스' },
+  { value: 'ITALY', label: '이탈리아' },
+  { value: 'SPAIN', label: '스페인' },
+  { value: 'NETHERLANDS', label: '네덜란드' },
+  { value: 'UK', label: '영국' },
+]
+
+type Step = 'school' | 'email' | 'code' | 'dispatch' | 'done'
 
 const STEP_META: Record<Step, { title: string; index: number }> = {
   school: { title: '학교 선택', index: 1 },
   email: { title: '이메일 인증', index: 2 },
   code: { title: '인증 코드', index: 3 },
-  done: { title: '완료', index: 4 },
+  dispatch: { title: '파견 지역', index: 4 },
+  done: { title: '완료', index: 5 },
 }
-const TOTAL_STEPS = 4
-// TODO: 실제 정책에 맞게 조정 예정 (사용자가 직접 수정할 예정)
-const RESEND_COOLDOWN = 30
+const TOTAL_STEPS = 5
+const RESEND_COOLDOWN = 60 // 스웨거 명세 기준
 
 export function SchoolEmailVerifyPage() {
   const navigate = useNavigate()
   const [step, setStep] = useState<Step>('school')
   const [school, setSchool] = useState<School | null>(null)
+  const [domainIndex, setDomainIndex] = useState(0)
   const [email, setEmail] = useState('')
   const [code, setCode] = useState<string[]>(Array(6).fill(''))
   const [error, setError] = useState('')
@@ -41,8 +56,29 @@ export function SchoolEmailVerifyPage() {
   const [isSending, setIsSending] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
   const [showInvalidAccessModal, setShowInvalidAccessModal] = useState(false)
+  const [verifiedProfile, setVerifiedProfile] = useState<VerifiedProfileData | null>(null)
+  const [dispatchCountry, setDispatchCountry] = useState('')
+  const [selectedGender, setSelectedGender] = useState<'MALE' | 'FEMALE' | null>(null)
+  const [signupError, setSignupError] = useState('')
+  const [schoolSearch, setSchoolSearch] = useState('')
+  const [countrySearch, setCountrySearch] = useState('')
 
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  const { data: schoolsData, isLoading: isSchoolsLoading } = useSchools()
+  const schools = schoolsData?.data ?? []
+  const filteredSchools = schools.filter((s) =>
+    s.name.toLowerCase().includes(schoolSearch.toLowerCase()),
+  )
+  const filteredCountries = DISPATCH_COUNTRIES.filter(
+    (c) =>
+      c.label.includes(countrySearch) ||
+      c.value.toLowerCase().includes(countrySearch.toLowerCase()),
+  )
+  const pendingKey = useSignupStore((s) => s.key)
+  const sendVerification = useSendVerification()
+  const verifyCode = useVerifyCode()
+  const signup = useSignup()
 
   const {
     register,
@@ -67,21 +103,31 @@ export function SchoolEmailVerifyPage() {
 
   const handleSelectSchool = (selected: School) => {
     setSchool(selected)
+    setDomainIndex(0)
     setStep('email')
   }
 
   const onSubmitEmail = async ({ local }: EmailForm) => {
     if (!school) return
-    const fullEmail = `${local}@${school.domain}`
+    if (!pendingKey) {
+      setError('잘못된 접근이에요. 처음부터 다시 시도해주세요.')
+      return
+    }
+    const fullEmail = `${local}@${school.emailDomains[domainIndex]}`
     setIsSending(true)
     try {
-      // ⚠️ MOCK 호출 — schoolEmailAuth.ts 참고
-      await sendVerificationEmail(fullEmail)
+      await sendVerification.mutateAsync({
+        pendingKey,
+        schoolId: school.id,
+        email: fullEmail,
+      })
       setEmail(fullEmail)
       setStep('code')
       setSecondsLeft(298)
       setResendCooldown(RESEND_COOLDOWN)
       setTimeout(() => codeInputRefs.current[0]?.focus(), 0)
+    } catch {
+      setError('인증 메일 발송에 실패했어요. 다시 시도해주세요.')
     } finally {
       setIsSending(false)
     }
@@ -109,16 +155,23 @@ export function SchoolEmailVerifyPage() {
       setError('6자리를 모두 입력해주세요.')
       return
     }
+    if (!school || !pendingKey) {
+      setError('잘못된 접근이에요. 처음부터 다시 시도해주세요.')
+      return
+    }
     setIsVerifying(true)
     try {
-      // ⚠️ MOCK 호출 — schoolEmailAuth.ts 참고 (정답코드 '482913' 하드코딩됨)
-      const isValid = await verifySchoolEmailCode(email, entered)
-      if (!isValid) {
-        setError('코드가 일치하지 않아요. 다시 확인해주세요.')
-        return
-      }
+      const res = await verifyCode.mutateAsync({
+        pendingKey,
+        schoolId: school.id,
+        email,
+        code: entered,
+      })
       setError('')
-      setStep('done')
+      setVerifiedProfile(res.data)
+      setStep('dispatch')
+    } catch {
+      setError('코드가 일치하지 않아요. 다시 확인해주세요.')
     } finally {
       setIsVerifying(false)
     }
@@ -126,12 +179,43 @@ export function SchoolEmailVerifyPage() {
 
   const handleResend = async () => {
     if (resendCooldown > 0) return
+    if (!pendingKey || !school) return
     setCode(Array(6).fill(''))
     setError('')
     setSecondsLeft(298)
     setResendCooldown(RESEND_COOLDOWN)
-    await sendVerificationEmail(email)
-    codeInputRefs.current[0]?.focus()
+    try {
+      await sendVerification.mutateAsync({ pendingKey, schoolId: school.id, email })
+      codeInputRefs.current[0]?.focus()
+    } catch {
+      setError('재전송에 실패했어요. 다시 시도해주세요.')
+    }
+  }
+
+  const handleSubmitDispatch = async () => {
+    if (!pendingKey || !verifiedProfile) return
+    if (!dispatchCountry) {
+      setSignupError('파견 지역을 선택해주세요.')
+      return
+    }
+    const gender = verifiedProfile.gender ?? selectedGender
+    if (!gender) {
+      setSignupError('성별을 선택해주세요.')
+      return
+    }
+    setSignupError('')
+    try {
+      await signup.mutateAsync({
+        pendingKey,
+        name: verifiedProfile.nickname,
+        dispatchCountry,
+        ...(verifiedProfile.gender ? {} : { gender }),
+      })
+      useSignupStore.getState().reset()
+      setStep('done')
+    } catch {
+      setSignupError('회원가입에 실패했어요. 다시 시도해주세요.')
+    }
   }
 
   const handleGoHome = () => {
@@ -139,7 +223,8 @@ export function SchoolEmailVerifyPage() {
   }
 
   const handleBack = () => {
-    if (step === 'code') setStep('email')
+    if (step === 'dispatch') setStep('code')
+    else if (step === 'code') setStep('email')
     else if (step === 'email') setStep('school')
     else setShowInvalidAccessModal(true) // school 단계: 잘못된 접근으로 안내
   }
@@ -207,17 +292,32 @@ export function SchoolEmailVerifyPage() {
             선택한 학교의 공식 이메일로 인증을 진행해요.
           </p>
 
-          <div className="flex flex-col gap-2">
-            {SCHOOLS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => handleSelectSchool(s)}
-                className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 hover:border-primary hover:bg-primary-light transition-colors"
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
+          {isSchoolsLoading ? (
+            <p className="text-sm text-slate-400">학교 목록 불러오는 중...</p>
+          ) : (
+            <>
+              <input
+                value={schoolSearch}
+                onChange={(e) => setSchoolSearch(e.target.value)}
+                placeholder="학교 이름 검색"
+                className="w-full px-4 py-2.5 rounded-xl border-2 border-primary text-sm mb-3 focus:outline-none"
+              />
+              <div className="flex flex-col gap-2">
+                {filteredSchools.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => handleSelectSchool(s)}
+                    className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 hover:border-primary hover:bg-primary-light transition-colors"
+                  >
+                    {s.name}
+                  </button>
+                ))}
+                {filteredSchools.length === 0 && (
+                  <p className="text-sm text-slate-400 text-center py-4">검색 결과가 없어요.</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -246,12 +346,28 @@ export function SchoolEmailVerifyPage() {
                   : 'border-slate-200'
               }`}
             />
-            <span className="text-sm text-slate-500 whitespace-nowrap">@{school.domain}</span>
+            {school.emailDomains.length > 1 ? (
+              <select
+                value={domainIndex}
+                onChange={(e) => setDomainIndex(Number(e.target.value))}
+                className="text-sm text-slate-500 border border-slate-200 rounded-lg px-2 py-2.5"
+              >
+                {school.emailDomains.map((d, i) => (
+                  <option key={d} value={i}>
+                    @{d}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-sm text-slate-500 whitespace-nowrap">
+                @{school.emailDomains[0]}
+              </span>
+            )}
           </div>
           {errors.local && (
             <p className="text-xs text-red-500 mb-2">{errors.local.message}</p>
           )}
-          <div className="mb-6" />
+          <p className="text-xs text-red-500 mb-2 min-h-[16px]">{error}</p>
 
           <button
             type="submit"
@@ -313,6 +429,87 @@ export function SchoolEmailVerifyPage() {
         </div>
       )}
 
+      {step === 'dispatch' && verifiedProfile && (
+        <div>
+          <p className="text-sm text-primary font-medium mb-1.5">마지막 단계</p>
+          <h1 className="text-xl font-bold text-slate-900 leading-snug mb-2">
+            파견 지역을
+            <br />
+            알려주세요
+          </h1>
+          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            같은 지역 친구들을 더 쉽게 찾을 수 있어요.
+          </p>
+
+          <label className="text-sm text-slate-500 block mb-1.5">파견 국가</label>
+          <input
+            value={countrySearch}
+            onChange={(e) => setCountrySearch(e.target.value)}
+            placeholder="국가 이름 검색"
+            className="w-full px-4 py-2.5 rounded-xl border-2 border-primary text-sm mb-2 focus:outline-none"
+          />
+          <div className="flex flex-col gap-1.5 mb-5 max-h-48 overflow-y-auto">
+            {filteredCountries.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => setDispatchCountry(c.value)}
+                className={`w-full text-left px-4 py-2.5 rounded-xl border text-sm font-medium ${
+                  dispatchCountry === c.value
+                    ? 'border-primary bg-primary-light text-primary'
+                    : 'border-slate-200 text-slate-700'
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+            {filteredCountries.length === 0 && (
+              <p className="text-sm text-slate-400 text-center py-4">검색 결과가 없어요.</p>
+            )}
+          </div>
+
+          {!verifiedProfile.gender && (
+            <>
+              <label className="text-sm text-slate-500 block mb-1.5">성별</label>
+              <div className="flex gap-2 mb-5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedGender('MALE')}
+                  className={`flex-1 h-11 rounded-xl border text-sm font-medium ${
+                    selectedGender === 'MALE'
+                      ? 'border-primary bg-primary-light text-primary'
+                      : 'border-slate-200 text-slate-600'
+                  }`}
+                >
+                  남성
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGender('FEMALE')}
+                  className={`flex-1 h-11 rounded-xl border text-sm font-medium ${
+                    selectedGender === 'FEMALE'
+                      ? 'border-primary bg-primary-light text-primary'
+                      : 'border-slate-200 text-slate-600'
+                  }`}
+                >
+                  여성
+                </button>
+              </div>
+            </>
+          )}
+
+          <p className="text-xs text-red-500 mb-3 min-h-[16px]">{signupError}</p>
+
+          <button
+            onClick={handleSubmitDispatch}
+            disabled={signup.isPending}
+            className="w-full h-11 rounded-xl bg-primary text-white font-medium disabled:opacity-50"
+          >
+            {signup.isPending ? '가입하는 중...' : '가입 완료하기'}
+          </button>
+        </div>
+      )}
+
       {step === 'done' && school && (
         <div className="text-center py-5">
           <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-5">
@@ -320,9 +517,7 @@ export function SchoolEmailVerifyPage() {
           </div>
           <h1 className="text-xl font-bold text-slate-900 mb-2">인증이 완료됐어요</h1>
           <p className="text-sm text-slate-500 mb-7 leading-relaxed">
-            이제 {school.name} 뱃지와 함께
-            <br />
-            동행 게시글을 작성할 수 있어요.
+            {school.name} 학생 인증이 완료됐어요.
           </p>
           <button
             onClick={handleGoHome}
