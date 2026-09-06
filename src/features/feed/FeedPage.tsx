@@ -10,6 +10,8 @@ import { getCountryOptions } from '../../utils/cityMeta'
 import type { FeedFilterOptions, FeedFilters } from '../../types/feed'
 import { useMyProfile } from '../../hooks/useMyProfile'
 import { isEligibleForPost } from '../../utils/eligibility'
+import { useEffect } from 'react'
+import { useMe } from '../../hooks/useAuth'
 
 const FILTER_OPTIONS: FeedFilterOptions = {
   countries: getCountryOptions(),
@@ -32,6 +34,13 @@ const DEFAULT_FILTERS: FeedFilters = {
 }
 
 export function FeedPage() {
+
+  // 아래 코드 삭제 예정
+    const { data: meData, error: meError} = useMe()
+  useEffect(() => {
+    if (meData) console.log('me 응답:', meData.data)
+    if (meError) console.log('me 에러:', meError)
+  }, [meData, meError])
   const [filters, setFilters] = useState<FeedFilters>(DEFAULT_FILTERS)
   const [searchInput, setSearchInput] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
