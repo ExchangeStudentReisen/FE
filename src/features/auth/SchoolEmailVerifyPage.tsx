@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSendVerification, useVerifyCode } from '../../hooks/useVerfication'
 import { useSignup } from '../../hooks/useAuth'
 import { useSignupStore } from '../../stores/signupStore'
-import { useSchools } from '../../hooks/useSchools'
+import { useSchools, useReportDomain } from '../../hooks/useSchools'
 import type { School } from '../../types/school'
 import type { VerifiedProfileData } from '../../types/verfication'
 
@@ -53,15 +53,18 @@ export function SchoolEmailVerifyPage() {
   const [error, setError] = useState('')
   const [secondsLeft, setSecondsLeft] = useState(298)
   const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN)
-  const [isSending, setIsSending] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
   const [showInvalidAccessModal, setShowInvalidAccessModal] = useState(false)
   const [verifiedProfile, setVerifiedProfile] = useState<VerifiedProfileData | null>(null)
+  const [editableName, setEditableName] = useState('')
   const [dispatchCountry, setDispatchCountry] = useState('')
   const [selectedGender, setSelectedGender] = useState<'MALE' | 'FEMALE' | null>(null)
   const [signupError, setSignupError] = useState('')
   const [schoolSearch, setSchoolSearch] = useState('')
   const [countrySearch, setCountrySearch] = useState('')
+  const [showDomainReportModal, setShowDomainReportModal] = useState(false)
+  const [domainReportMessage, setDomainReportMessage] = useState('')
+  const [domainReportSubmitted, setDomainReportSubmitted] = useState(false)
 
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
@@ -79,6 +82,7 @@ export function SchoolEmailVerifyPage() {
   const sendVerification = useSendVerification()
   const verifyCode = useVerifyCode()
   const signup = useSignup()
+  const reportDomain = useReportDomain()
 
   const {
     register,
@@ -107,30 +111,29 @@ export function SchoolEmailVerifyPage() {
     setStep('email')
   }
 
-  const onSubmitEmail = async ({ local }: EmailForm) => {
+  const onSubmitEmail = ({ local }: EmailForm) => {
     if (!school) return
     if (!pendingKey) {
       setError('잘못된 접근이에요. 처음부터 다시 시도해주세요.')
       return
     }
     const fullEmail = `${local}@${school.emailDomains[domainIndex]}`
-    setIsSending(true)
-    try {
-      await sendVerification.mutateAsync({
-        pendingKey,
-        schoolId: school.id,
-        email: fullEmail,
-      })
-      setEmail(fullEmail)
-      setStep('code')
-      setSecondsLeft(298)
-      setResendCooldown(RESEND_COOLDOWN)
-      setTimeout(() => codeInputRefs.current[0]?.focus(), 0)
-    } catch {
-      setError('인증 메일 발송에 실패했어요. 다시 시도해주세요.')
-    } finally {
-      setIsSending(false)
-    }
+
+    // 발송 완료를 기다리지 않고 바로 다음 화면으로 이동 — 실패 시 code 화면에서 에러 표시
+    sendVerification.mutate(
+      { pendingKey, schoolId: school.id, email: fullEmail },
+      {
+        onError: () => {
+          setError('인증 메일 발송에 실패했어요. 코드 재전송을 눌러 다시 시도해주세요.')
+        },
+      },
+    )
+
+    setEmail(fullEmail)
+    setStep('code')
+    setSecondsLeft(298)
+    setResendCooldown(RESEND_COOLDOWN)
+    setTimeout(() => codeInputRefs.current[0]?.focus(), 0)
   }
 
   const handleCodeChange = (index: number, value: string) => {
@@ -169,6 +172,7 @@ export function SchoolEmailVerifyPage() {
       })
       setError('')
       setVerifiedProfile(res.data)
+      setEditableName(res.data.nickname)
       setStep('dispatch')
     } catch {
       setError('코드가 일치하지 않아요. 다시 확인해주세요.')
@@ -194,8 +198,8 @@ export function SchoolEmailVerifyPage() {
 
   const handleSubmitDispatch = async () => {
     if (!pendingKey || !verifiedProfile) return
-    if (!dispatchCountry) {
-      setSignupError('파견 지역을 선택해주세요.')
+    if (!editableName.trim()) {
+      setSignupError('이름을 입력해주세요.')
       return
     }
     const gender = verifiedProfile.gender ?? selectedGender
@@ -203,11 +207,15 @@ export function SchoolEmailVerifyPage() {
       setSignupError('성별을 선택해주세요.')
       return
     }
+    if (!dispatchCountry) {
+      setSignupError('파견 지역을 선택해주세요.')
+      return
+    }
     setSignupError('')
     try {
       await signup.mutateAsync({
         pendingKey,
-        name: verifiedProfile.nickname,
+        name: editableName.trim(),
         dispatchCountry,
         ...(verifiedProfile.gender ? {} : { gender }),
       })
@@ -234,6 +242,24 @@ export function SchoolEmailVerifyPage() {
     navigate('/', { replace: true })
   }
 
+  const handleSubmitDomainReport = () => {
+    if (!school || !domainReportMessage.trim()) return
+    reportDomain.mutate(
+      { id: school.id, payload: { message: domainReportMessage } },
+      {
+        onSuccess: () => {
+          setDomainReportSubmitted(true)
+        },
+      },
+    )
+  }
+
+  const closeDomainReportModal = () => {
+    setShowDomainReportModal(false)
+    setDomainReportMessage('')
+    setDomainReportSubmitted(false)
+  }
+
   const { title, index } = STEP_META[step]
   const progress = (index / TOTAL_STEPS) * 100
 
@@ -252,6 +278,56 @@ export function SchoolEmailVerifyPage() {
             >
               확인
             </button>
+          </div>
+        </div>
+      )}
+
+      {showDomainReportModal && school && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-8">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+            {domainReportSubmitted ? (
+              <div className="text-center">
+                <p className="text-base font-semibold text-slate-900 mb-2">제보가 접수됐어요</p>
+                <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                  확인 후 학교 정보를 업데이트할게요. 감사해요!
+                </p>
+                <button
+                  onClick={closeDomainReportModal}
+                  className="w-full h-11 rounded-xl bg-primary text-white font-medium"
+                >
+                  확인
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-base font-semibold text-slate-900 mb-2">도메인 제보하기</p>
+                <p className="text-sm text-slate-500 mb-4 leading-relaxed">
+                  {school.name}의 실제 이메일 도메인을 알려주세요.
+                </p>
+                <textarea
+                  value={domainReportMessage}
+                  onChange={(e) => setDomainReportMessage(e.target.value)}
+                  placeholder="예: 실제 도메인은 @abc.ac.kr이에요"
+                  rows={3}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm mb-4 resize-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={closeDomainReportModal}
+                    className="flex-1 h-11 rounded-xl border border-slate-300 text-slate-600 font-medium"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleSubmitDomainReport}
+                    disabled={!domainReportMessage.trim() || reportDomain.isPending}
+                    className="flex-1 h-11 rounded-xl bg-primary text-white font-medium disabled:opacity-50"
+                  >
+                    {reportDomain.isPending ? '전송 중...' : '제보하기'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -330,9 +406,9 @@ export function SchoolEmailVerifyPage() {
             인증해주세요
           </h1>
           <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-            재학 중인 학교의 공식 이메일로 인증하면
+            학교 이메일 인증을 통해
             <br />
-            교환학생 동행 상대에게 학교 뱃지가 표시돼요.
+            해당 학교 학생들이 서비스를 이용하고 있어요.
           </p>
 
           <label className="text-sm text-slate-500 block mb-1.5">학교 이메일</label>
@@ -367,15 +443,24 @@ export function SchoolEmailVerifyPage() {
           {errors.local && (
             <p className="text-xs text-red-500 mb-2">{errors.local.message}</p>
           )}
-          <p className="text-xs text-red-500 mb-2 min-h-[16px]">{error}</p>
+          <p className="text-xs text-red-500 mb-2 min-h-4">{error}</p>
 
           <button
             type="submit"
-            disabled={isSending}
             className="w-full h-11 rounded-xl bg-primary text-white font-medium disabled:opacity-50"
           >
-            {isSending ? '전송 중...' : '인증 메일 보내기'}
+            인증 메일 보내기
           </button>
+
+          <div className="flex justify-end mt-2">
+            <button
+              type="button"
+              onClick={() => setShowDomainReportModal(true)}
+              className="text-xs text-slate-400 underline"
+            >
+              학교 이메일 도메인이 다른가요? 제보하기
+            </button>
+          </div>
         </form>
       )}
 
@@ -410,7 +495,7 @@ export function SchoolEmailVerifyPage() {
               />
             ))}
           </div>
-          <p className="text-xs text-red-500 mb-5 min-h-[16px]">{error}</p>
+          <p className="text-xs text-red-500 mb-5 min-h-4">{error}</p>
 
           <button
             onClick={handleVerify}
@@ -426,6 +511,11 @@ export function SchoolEmailVerifyPage() {
           >
             {resendCooldown > 0 ? `코드 재전송 (${resendCooldown}초 후 가능)` : '코드 재전송'}
           </button>
+
+          <p className="text-xs text-slate-400 mt-4 leading-relaxed">
+            이메일 주소가 정확한지 다시 한 번 확인해주세요. 코드가 보이지 않는다면 스팸
+            메일함도 확인해주세요.
+          </p>
         </div>
       )}
 
@@ -440,6 +530,67 @@ export function SchoolEmailVerifyPage() {
           <p className="text-sm text-slate-500 mb-6 leading-relaxed">
             같은 지역 친구들을 더 쉽게 찾을 수 있어요.
           </p>
+
+          <label className="text-sm text-slate-500 block mb-1.5">이름(닉네임)</label>
+          <input
+            value={editableName}
+            onChange={(e) => setEditableName(e.target.value)}
+            placeholder="네이버에서 가져온 이름"
+            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm mb-5"
+          />
+
+          <label className="text-sm text-slate-500 block mb-1.5">성별</label>
+          {verifiedProfile.gender ? (
+            <div className="flex gap-2 mb-5">
+              <button
+                type="button"
+                disabled
+                className={`flex-1 h-11 rounded-xl border text-sm font-medium disabled:cursor-not-allowed ${
+                  verifiedProfile.gender === 'MALE'
+                    ? 'border-primary bg-primary-light text-primary'
+                    : 'border-slate-200 text-slate-600'
+                }`}
+              >
+                남성
+              </button>
+              <button
+                type="button"
+                disabled
+                className={`flex-1 h-11 rounded-xl border text-sm font-medium disabled:cursor-not-allowed ${
+                  verifiedProfile.gender === 'FEMALE'
+                    ? 'border-primary bg-primary-light text-primary'
+                    : 'border-slate-200 text-slate-600'
+                }`}
+              >
+                여성
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2 mb-5">
+              <button
+                type="button"
+                onClick={() => setSelectedGender('MALE')}
+                className={`flex-1 h-11 rounded-xl border text-sm font-medium ${
+                  selectedGender === 'MALE'
+                    ? 'border-primary bg-primary-light text-primary'
+                    : 'border-slate-200 text-slate-600'
+                }`}
+              >
+                남성
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedGender('FEMALE')}
+                className={`flex-1 h-11 rounded-xl border text-sm font-medium ${
+                  selectedGender === 'FEMALE'
+                    ? 'border-primary bg-primary-light text-primary'
+                    : 'border-slate-200 text-slate-600'
+                }`}
+              >
+                여성
+              </button>
+            </div>
+          )}
 
           <label className="text-sm text-slate-500 block mb-1.5">파견 국가</label>
           <input
@@ -468,37 +619,7 @@ export function SchoolEmailVerifyPage() {
             )}
           </div>
 
-          {!verifiedProfile.gender && (
-            <>
-              <label className="text-sm text-slate-500 block mb-1.5">성별</label>
-              <div className="flex gap-2 mb-5">
-                <button
-                  type="button"
-                  onClick={() => setSelectedGender('MALE')}
-                  className={`flex-1 h-11 rounded-xl border text-sm font-medium ${
-                    selectedGender === 'MALE'
-                      ? 'border-primary bg-primary-light text-primary'
-                      : 'border-slate-200 text-slate-600'
-                  }`}
-                >
-                  남성
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedGender('FEMALE')}
-                  className={`flex-1 h-11 rounded-xl border text-sm font-medium ${
-                    selectedGender === 'FEMALE'
-                      ? 'border-primary bg-primary-light text-primary'
-                      : 'border-slate-200 text-slate-600'
-                  }`}
-                >
-                  여성
-                </button>
-              </div>
-            </>
-          )}
-
-          <p className="text-xs text-red-500 mb-3 min-h-[16px]">{signupError}</p>
+          <p className="text-xs text-red-500 mb-3 min-h-4">{signupError}</p>
 
           <button
             onClick={handleSubmitDispatch}
