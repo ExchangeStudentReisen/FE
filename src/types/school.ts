@@ -8,3 +8,7 @@ export interface School {
   createdAt: string
   updatedAt: string
 }
+
+export interface DomainReportPayload {
+  message: string
+}
