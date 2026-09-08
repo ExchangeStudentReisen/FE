@@ -34,12 +34,12 @@ export function WelcomePage() {
           onClick={() => {
             window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/naver`
           }}
-          className="w-full h-14 rounded-xl overflow-hidden"
+          className="w-full rounded-xl overflow-hidden"
         >
           <img
             src={naverLoginButton}
             alt="네이버 로그인"
-            className="w-full h-full object-fill"
+            className="w-full h-auto block"
           />
         </button>
       </div>
