@@ -332,9 +332,9 @@ export function SchoolEmailVerifyPage() {
         </div>
       )}
 
-      {step !== 'done' && (
-        <div className="mb-1">
-          <div className="flex items-center justify-between mb-3">
+      <div className="mb-1">
+        <div className="flex items-center justify-between mb-3">
+          {step !== 'done' ? (
             <button
               onClick={handleBack}
               className="w-9 h-9 flex items-center justify-start -ml-1.5 text-slate-700 text-lg"
@@ -342,19 +342,21 @@ export function SchoolEmailVerifyPage() {
             >
               ‹
             </button>
-            <span className="text-sm font-medium text-slate-900">{title}</span>
-            <span className="text-xs text-slate-400 w-9 text-right">
-              {index} / {TOTAL_STEPS}
-            </span>
-          </div>
-          <div className="h-1 bg-slate-100 rounded-full overflow-hidden mb-7">
-            <div
-              className="h-full bg-primary rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+          ) : (
+            <span className="w-9 h-9" />
+          )}
+          <span className="text-sm font-medium text-slate-900">{title}</span>
+          <span className="text-xs text-slate-400 w-9 text-right">
+            {index} / {TOTAL_STEPS}
+          </span>
         </div>
-      )}
+        <div className="h-1 bg-slate-100 rounded-full overflow-hidden mb-7">
+          <div
+            className="h-full bg-primary rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
 
       {step === 'school' && (
         <div>
@@ -523,13 +525,10 @@ export function SchoolEmailVerifyPage() {
         <div>
           <p className="text-sm text-primary font-medium mb-1.5">마지막 단계</p>
           <h1 className="text-xl font-bold text-slate-900 leading-snug mb-2">
-            파견 지역을
+            파견 지역을 입력하고
             <br />
-            알려주세요
+            내 정보가 맞는지 확인해주세요.
           </h1>
-          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-            같은 지역 친구들을 더 쉽게 찾을 수 있어요.
-          </p>
 
           <label className="text-sm text-slate-500 block mb-1.5">이름(닉네임)</label>
           <input
