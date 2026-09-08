@@ -1,9 +1,7 @@
-import { useNavigate } from 'react-router-dom'
-import naverLoginButton from '../../assets/NAVER.png'
+import naverLoginButton from '../../assets/NAVER.svg'
 import { BoardingPassCard } from './BoardingPassCard'
 
 export function WelcomePage() {
-  const navigate = useNavigate()
 
   return (
     <div className="flex flex-col min-h-screen p-6 pb-12 bg-linear-to-b from-primary-light to-white">
@@ -34,12 +32,12 @@ export function WelcomePage() {
           onClick={() => {
             window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/naver`
           }}
-          className="w-full rounded-xl overflow-hidden"
+          className="w-full min-w-30 rounded-xl overflow-hidden"
         >
           <img
             src={naverLoginButton}
             alt="네이버 로그인"
-            className="w-full h-auto block"
+            className="w-full h-auto block aspect-491/75"
           />
         </button>
       </div>
