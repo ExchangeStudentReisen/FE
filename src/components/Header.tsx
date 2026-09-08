@@ -36,7 +36,7 @@ export function Header() {
   }
 
   return (
-    <div className="mx-auto flex max-w-107.5 items-center px-4 py-3">
+    <div className="flex items-center px-4 py-3">
       {/* 로고: 홈에서는 풀 워드마크, 상세 페이지에서는 뒤로가기, 그 외엔 배지 + 페이지명 */}
       <div className="flex items-center gap-2">
         {showBack && (

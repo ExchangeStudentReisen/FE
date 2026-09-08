@@ -28,7 +28,7 @@ export function PostDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="relative mx-auto min-h-screen max-w-107.5 bg-[#f7fafe] pb-24">
+      <div className="relative min-h-screen bg-[#f7fafe] pb-24">
         <Header />
         <div className="px-4 mt-4 flex flex-col gap-3">
           <div className="h-6 w-2/3 rounded bg-slate-100 animate-pulse" />
@@ -40,7 +40,7 @@ export function PostDetailPage() {
 
   if (isError || !post) {
     return (
-      <div className="relative mx-auto min-h-screen max-w-107.5 bg-[#f7fafe] pb-24">
+      <div className="relative min-h-screen bg-[#f7fafe] pb-24">
         <Header />
         <div className="flex flex-col items-center justify-center py-20 px-4">
           <p className="text-sm text-slate-400">게시글을 찾을 수 없어요.</p>
@@ -52,7 +52,7 @@ export function PostDetailPage() {
   const city = getCityMeta(post.travelCity)
 
   return (
-    <div className="relative mx-auto min-h-screen max-w-107.5 bg-[#f7fafe] pb-24">
+    <div className="relative min-h-screen bg-[#f7fafe] pb-24">
       <Header />
 
       <div className="px-4 mt-4">

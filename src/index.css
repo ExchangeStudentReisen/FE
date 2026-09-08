@@ -16,10 +16,4 @@ body {
   background-color: #f8fafc;
 }
 
-/* 모바일 브라우저 최적화: 최대 폭을 앱처럼 제한 */
-#root {
-  /*max-width: 480px;
-  margin: 0 auto;*/
-  min-height: 100vh;
-  /*background-color: #ffffff;*/
-}
+/* 화면 크기·배경은 AppLayout(src/components/AppLayout.tsx)에서 전역으로 관리 */

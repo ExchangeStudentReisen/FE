@@ -74,7 +74,7 @@ export function FeedPage() {
   }
 
   return (
-    <div className="mx-auto max-w-107.5 pb-8">
+    <div className="pb-8">
       <div className="bg-linear-to-b from-indigo-100 via-blue-50 to-white border-b border-slate-100">
         <Header />
         <header className="px-4 pb-4">
