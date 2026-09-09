@@ -73,7 +73,7 @@ export function PostCreatePage() {
         {step === 2 && <Step2RecruitInfo />}
         {step === 3 && <Step3IntroLink />}
 
-        <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white px-4 py-3 border-t border-slate-100">
+        <div className="fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 bg-white px-4 py-3 border-t border-slate-100">
           {step < TOTAL_STEPS ? (
             <button type="button" onClick={goNext} className="w-full py-3 rounded-xl bg-blue-600 text-white font-medium cursor-pointer">
               다음

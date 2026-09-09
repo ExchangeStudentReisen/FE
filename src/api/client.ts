@@ -1,0 +1,64 @@
+import { useAuthTokenStore } from '../stores/authTokenStore'
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+let isRefreshing = false
+let refreshPromise: Promise<string | null> | null = null
+
+async function refreshAccessToken(): Promise<string | null> {
+  const { refreshToken, setTokens, clearTokens } = useAuthTokenStore.getState()
+  if (!refreshToken) return null
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/auth/reissue`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    })
+    if (!res.ok) throw new Error('reissue failed')
+    const json = await res.json()
+    setTokens(json.data.accessToken, json.data.refreshToken) // refreshToken도 재발급되므로 같이 갱신
+    return json.data.accessToken
+  } catch {
+    clearTokens()
+    return null
+  }
+}
+
+export async function fetchApi<T>(
+  path: string,
+  options: RequestInit = {},
+  isRetry = false,
+): Promise<T> {
+  const { accessToken } = useAuthTokenStore.getState()
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      ...(options.headers ?? {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+  })
+
+  if (res.status === 401 && !isRetry) {
+    if (!isRefreshing) {
+      isRefreshing = true
+      refreshPromise = refreshAccessToken().finally(() => {
+        isRefreshing = false
+      })
+    }
+    const newToken = await refreshPromise
+    if (newToken) {
+      return fetchApi<T>(path, options, true) // 원래 요청 한 번만 재시도
+    }
+    throw new Error('Unauthorized')
+  }
+
+  if (!res.ok) {
+    throw new Error(`API Error: ${res.status}`)
+  }
+  if(res.status === 204) {
+    return undefined as T
+  }
+  return res.json()
+}
