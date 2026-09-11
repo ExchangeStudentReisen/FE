@@ -36,7 +36,7 @@ export function FeedFilterBar({
           isOpen={openDropdown === 'country'}
           onToggle={() => setOpenDropdown((prev) => (prev === 'country' ? null : 'country'))}
           onSelect={(value) => {
-            onChange({ ...filters, travelCity: value || undefined })
+            onChange({ ...filters, travelCity: (value || undefined) as FeedFilters['travelCity'] })
             setOpenDropdown(null)
           }}
         />

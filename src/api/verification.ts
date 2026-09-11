@@ -1,6 +1,6 @@
 import { fetchApi } from './client'
 import type { ApiResponse } from '../types/api'
-import type { SendVerificationPayload, VerifyCodePayload, VerifiedProfileData } from '../types/verfication'
+import type { SendVerificationPayload, VerifyCodePayload, VerifiedProfileData } from '../types/verification'
 
 export function sendVerificationEmail(payload: SendVerificationPayload) {
   return fetchApi<ApiResponse<string>>('/api/verification/send', {
