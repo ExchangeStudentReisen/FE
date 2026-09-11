@@ -1,40 +1,8 @@
-// 05번 모집글 작성 화면의 3단계 입력값 기준
-export type TravelStyle =
-  | '카페' | '야경' | '관광' | '미술관' | '공연' | '맛집'
-  | '저렴이' | '브런치' | '쇼핑' | '역사' | '야시장' | '느긋'
+import type { MemberGender } from './auth'
 
 export type RecruitGender = 'any' | 'female' | 'male'
 
-export interface CompanionPost {
-  id: string
-  country: string
-  city: string
-  startDate: string // ISO date
-  endDate: string
-  title: string
-  description: string
-  recruitGender: RecruitGender
-  minAge: number
-  maxAge: number
-  headcount: number
-  travelStyles: TravelStyle[]
-  kakaoOpenChatUrl: string
-  status: 'recruiting' | 'matched' | 'expired'
-  author: {
-    id: string
-    nickname: string
-    school: string
-    gender: 'female' | 'male'
-    age: number
-  }
-  interestedCount: number
-  createdAt: string
-}
-
-// ---- 여기서부터 POST /posts 요청/응답 스키마 기준으로 추가 ----
-// TODO: 스웨거 예시의 tripCity가 "GERMANY"처럼 국가명으로 찍혀있어서
-// 실제로 도시 단위 enum인지 국가 단위인지 백엔드랑 확인 필요.
-// 일단 프론트는 country/city를 따로 들고 있다가 city 코드를 tripCity로 보내는 걸로 가정.
+// ---- 여기서부터 POST /api/posts 요청/응답 스키마 기준으로 추가 ----
 export type ApiGender = 'ANY' | 'FEMALE' | 'MALE'
 
 export const RECRUIT_GENDER_TO_API: Record<RecruitGender, ApiGender> = {
@@ -43,8 +11,15 @@ export const RECRUIT_GENDER_TO_API: Record<RecruitGender, ApiGender> = {
   male: 'MALE',
 }
 
+// 백엔드 Country enum (com.jhssong.exchange_student_reisen.domain.member.entity.Country) 값과 동일해야 함
+export type Country =
+  | 'AUSTRALIA' | 'NEW_ZEALAND' | 'BELGIUM' | 'SINGAPORE' | 'JAPAN' | 'CZECH_REPUBLIC'
+  | 'SPAIN' | 'POLAND' | 'SWEDEN' | 'CANADA' | 'UNITED_KINGDOM' | 'NETHERLANDS'
+  | 'GERMANY' | 'AUSTRIA' | 'FINLAND' | 'CHINA' | 'SOUTH_KOREA' | 'DENMARK'
+  | 'FRANCE' | 'UNITED_STATES' | 'SWITZERLAND' | 'PORTUGAL' | 'NORWAY' | 'ITALY' | 'HUNGARY'
+
+// authorId/memberId는 body에 없음 — 서버가 Authorization 헤더의 로그인 토큰으로 작성자를 식별함
 export interface CreatePostRequest {
-  authorId: number
   title: string
   content: string
   kakaotalkLink: string
@@ -54,12 +29,10 @@ export interface CreatePostRequest {
   gender: ApiGender
   startDate: string // 'YYYY-MM-DD'
   endDate: string
-  tripCity: string
+  travelCity: Country // 도시가 아니라 국가 단위 enum (예: 'FRANCE') — COUNTRY_OPTIONS(countryMock.ts)의 country.code와 동일한 값 사용
 }
 
-export type ApiGenderResponse = 'ANY' | 'FEMALE' | 'MALE'
-
-// POST /posts 응답의 data 필드
+// POST /api/posts 응답의 data 필드
 export interface CreatePostResponseData {
   id: number
   authorId: number
@@ -70,13 +43,56 @@ export interface CreatePostResponseData {
   maxMembers: number
   startAge: number
   endAge: number
-  gender: ApiGenderResponse
+  gender: ApiGender
   startDate: string
   endDate: string
-  tripCity: string
+  travelCity: Country
   isRecruiting: boolean
   view: number
   clickCnt: number
   createdAt: string
   updatedAt: string
+}
+
+// ---- 여기서부터 GET /api/posts/{id} 응답 스키마 기준으로 추가 (구 types/postDetail.ts) ----
+
+// 작성자 실제 성별 — 모집 선호 성별과 달리 OTHER(성별무관) 없음
+export type AuthorGender = MemberGender
+
+// 모집 선호 성별 — GET /api/posts, GET /api/posts/{id}와 동일한 enum
+export type PostRecruitGender = 'MALE' | 'FEMALE' | 'OTHER'
+
+export interface PostDetailApiData {
+  id: number
+  authorId: number
+  authorName: string
+  authorBirthYear: number
+  authorGender: AuthorGender
+  title: string
+  content: string
+  maxMembers: number
+  startAge: number
+  endAge: number
+  gender: PostRecruitGender
+  startDate: string // 'YYYY-MM-DD'
+  endDate: string
+  travelCity: Country
+  isRecruiting: boolean
+  view: number
+  clickCnt: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PostDetailResponse {
+  result: 'SUCCESS' | string // TODO: 실패 시 값 확인
+  data: PostDetailApiData
+  title: string
+  message: string
+}
+
+// ---- 여기서부터 GET /api/posts/{id}/kakaotalk-link 응답 스키마 기준으로 추가 (구 types/chatLink.ts) ----
+
+export interface ChatLinkApiData {
+  kakaotalkLink: string
 }
