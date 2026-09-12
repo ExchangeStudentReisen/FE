@@ -188,7 +188,10 @@ export function PostCreatePage() {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setCountryOpen((v) => !v)}
+                onClick={() => {
+                  setCountryOpen((v) => !v)
+                  setCityOpen(false)
+                }}
                 className="w-full flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2.5 text-sm cursor-pointer"
               >
                 <span className="flex items-center gap-1.5">
@@ -228,7 +231,10 @@ export function PostCreatePage() {
               <button
                 type="button"
                 disabled={!selectedCountry}
-                onClick={() => setCityOpen((v) => !v)}
+                onClick={() => {
+                  setCityOpen((v) => !v)
+                  setCountryOpen(false)
+                }}
                 className="w-full flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2.5 text-sm disabled:opacity-40 cursor-pointer"
               >
                 <span>
