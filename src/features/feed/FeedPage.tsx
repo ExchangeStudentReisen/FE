@@ -50,11 +50,10 @@ export function FeedPage() {
   const keyword = filters.keyword.trim().toLowerCase()
   const searchedItems = keyword ? items.filter((item) => item.title.toLowerCase().includes(keyword)) : items
 
-  const sortedItems = [...searchedItems].sort((a, b) =>
-    filters.sort === 'latest'
-      ? new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      : b.view - a.view,
-  )
+  // 최신순은 백엔드가 이미 수정일 기준 내림차순으로 내려주는 순서를 그대로 사용
+  // (updatedAt으로 프론트에서 다시 정렬하면 조회수 증가로 updatedAt이 갱신된 글이 "읽은 순서대로" 위로 튀어오름)
+  const sortedItems =
+    filters.sort === 'latest' ? searchedItems : [...searchedItems].sort((a, b) => b.view - a.view)
 
   const visibleItems =
     onlyEligible && myProfile ? sortedItems.filter((item) => isEligibleForPost(myProfile, item)) : sortedItems
