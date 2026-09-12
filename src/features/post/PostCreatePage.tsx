@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { DayPicker, type DateRange } from 'react-day-picker'
 import { ko } from 'react-day-picker/locale'
-import { ChevronLeft, ChevronRight, ChevronDown, Link as LinkIcon, Check, ShieldCheck } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, Link as LinkIcon, ShieldCheck } from 'lucide-react'
 import { createPostCreateSchema, STEP_FIELDS, type PostCreateFormValues } from '../../schemas/postCreateSchema'
 import { RECRUIT_GENDER_TO_API, type CreatePostRequest, type RecruitGender, type Country } from '../../types/post'
 import { FormStepHeader } from '../../components/FormStepHeader.tsx'
@@ -173,8 +173,6 @@ export function PostCreatePage() {
   // ── Step 3 · 소개 · 링크 ──
   const title = watch('title') ?? ''
   const content = watch('content') ?? ''
-  const kakaoUrl = watch('kakaoOpenChatUrl') ?? ''
-  const isKakaoValid = !errors.kakaoOpenChatUrl && kakaoUrl.length > 0
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="pb-24">
@@ -475,9 +473,8 @@ export function PostCreatePage() {
               <input
                 {...register('kakaoOpenChatUrl')}
                 placeholder="open.kakao.com/o/xxxxxxx"
-                className={`w-full border rounded-xl pl-9 pr-9 py-2.5 text-sm outline-none ${showError(3, !!errors.kakaoOpenChatUrl) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
+                className={`w-full border rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none ${showError(3, !!errors.kakaoOpenChatUrl) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
               />
-              {isKakaoValid && <Check size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600" />}
             </div>
             {showError(3, !!errors.kakaoOpenChatUrl) && <p className="mt-1 text-xs text-red-500">{errors.kakaoOpenChatUrl?.message}</p>}
           </div>

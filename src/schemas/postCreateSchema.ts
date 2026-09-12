@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const KAKAO_OPENCHAT_REGEX = /^https?:\/\/open\.kakao\.com\/[oO]\/[A-Za-z0-9]+$/
+const KAKAO_OPENCHAT_REGEX = /^https?:\/\/open\.kakao\.com\/[oO]\//
 
 const postCreateObjectSchema = z.object({
   // Step 1 · 도시 · 날짜
@@ -21,7 +21,7 @@ const postCreateObjectSchema = z.object({
   kakaoOpenChatUrl: z
     .string()
     .min(1, '카카오 오픈채팅 링크를 입력해주세요')
-    .regex(KAKAO_OPENCHAT_REGEX, '올바른 카카오 오픈채팅 링크 형식이 아니에요'),
+    .regex(KAKAO_OPENCHAT_REGEX, '올바르지 않은 오픈채팅 링크입니다. 올바른 링크를 올려주세요'),
 })
 
 export type PostCreateFormValues = z.infer<typeof postCreateObjectSchema>
