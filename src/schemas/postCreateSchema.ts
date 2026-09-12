@@ -13,7 +13,7 @@ const postCreateObjectSchema = z.object({
   recruitGender: z.enum(['any', 'female', 'male']),
   minAge: z.number().min(20).max(30),
   maxAge: z.number().min(20).max(30),
-  headcount: z.number().min(1).max(4), // 4는 '4+명'을 의미
+  headcount: z.number().min(2).max(5), // 5는 '5+명'을 의미
 
   // Step 3 · 소개 · 링크
   title: z.string().min(1, '한 줄 제목을 입력해주세요').max(30, '30자 이내로 입력해주세요'),

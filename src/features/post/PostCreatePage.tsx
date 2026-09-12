@@ -22,7 +22,7 @@ const GENDER_OPTIONS: { value: RecruitGender; label: string }[] = [
   { value: 'female', label: '여성만' },
   { value: 'male', label: '남성만' },
 ]
-const HEADCOUNT_OPTIONS = [1, 2, 3, 4] as const
+const HEADCOUNT_OPTIONS = [2, 3, 4, 5] as const
 // 교환학생 대상 서비스이므로 연령 범위는 20~30세로 고정
 const MIN_AGE = 20
 const MAX_AGE = 30
@@ -74,7 +74,7 @@ export function PostCreatePage() {
     mode: 'onSubmit',
     defaultValues: {
       country: '', city: '', startDate: '', endDate: '',
-      recruitGender: 'any', minAge: 20, maxAge: 23, headcount: 1,
+      recruitGender: 'any', minAge: 20, maxAge: 23, headcount: 2,
       title: '', content: '', kakaoOpenChatUrl: '',
     },
   })
@@ -416,6 +416,7 @@ export function PostCreatePage() {
           {showError(2, !!errors.maxAge) && <p className="mt-1 text-xs text-red-500">{errors.maxAge?.message}</p>}
 
           <p className="mt-6 text-sm font-medium text-slate-700">인원</p>
+          <p className="mt-1 text-xs text-slate-400">나를 포함한 인원을 선택해주세요</p>
           <div className="mt-2 grid grid-cols-4 gap-2">
             {HEADCOUNT_OPTIONS.map((n) => (
               <button
@@ -427,7 +428,7 @@ export function PostCreatePage() {
                   headcount === n ? 'border-blue-600 bg-blue-600 text-white font-medium' : 'border-slate-200 text-slate-600',
                 ].join(' ')}
               >
-                {n === 4 ? '4+명' : `${n}명`}
+                {n === 5 ? '5+명' : `${n}명`}
               </button>
             ))}
           </div>
