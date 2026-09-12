@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, ChevronDown, Link as LinkIcon, Check, ShieldCheck, CalendarClock } from 'lucide-react'
+import { DayPicker, type DateRange } from 'react-day-picker'
+import { ko } from 'react-day-picker/locale'
+import { ChevronLeft, ChevronRight, ChevronDown, Link as LinkIcon, Check, ShieldCheck } from 'lucide-react'
 import { createPostCreateSchema, STEP_FIELDS, type PostCreateFormValues } from '../../schemas/postCreateSchema'
 import { RECRUIT_GENDER_TO_API, type CreatePostRequest, type RecruitGender, type Country } from '../../types/post'
 import { FormStepHeader } from '../../components/FormStepHeader.tsx'
@@ -69,7 +71,7 @@ export function PostCreatePage() {
 
   const { watch, setValue, register, trigger, handleSubmit, formState: { errors } } = useForm<PostCreateFormValues>({
     resolver: zodResolver(schema),
-    mode: 'onChange',
+    mode: 'onSubmit',
     defaultValues: {
       country: '', city: '', startDate: '', endDate: '',
       recruitGender: 'any', minAge: 20, maxAge: 23, headcount: 1,
@@ -85,6 +87,10 @@ export function PostCreatePage() {
     },
   })
 
+  // 스텝별로 "다음"/제출을 한 번이라도 시도했는지 — 시도 전에는 미입력 필드를 빨갛게 표시하지 않음
+  const [attemptedSteps, setAttemptedSteps] = useState({ 1: false, 2: false, 3: false })
+  const showError = (forStep: 1 | 2 | 3, hasError: boolean) => attemptedSteps[forStep] && hasError
+
   const goBack = () => {
     if (step === 1) { navigate(-1); return }
     setStep((prev) => (prev - 1) as 1 | 2 | 3)
@@ -92,7 +98,12 @@ export function PostCreatePage() {
 
   const goNext = async () => {
     const valid = await trigger(STEP_FIELDS[step])
+    setAttemptedSteps((prev) => ({ ...prev, [step]: true }))
     if (valid) setStep((prev) => (prev + 1) as 1 | 2 | 3)
+  }
+
+  const onInvalidSubmit = () => {
+    setAttemptedSteps((prev) => ({ ...prev, 3: true }))
   }
 
   const onSubmit = (values: PostCreateFormValues) => {
@@ -115,34 +126,26 @@ export function PostCreatePage() {
   const startDate = watch('startDate')
   const endDate = watch('endDate')
 
-  const [viewDate, setViewDate] = useState(() => (startDate ? new Date(startDate) : new Date()))
   const [countryOpen, setCountryOpen] = useState(false)
   const [cityOpen, setCityOpen] = useState(false)
 
   const selectedCountry = COUNTRY_OPTIONS.find((c) => c.code === countryCode)
   const recentCountries = COUNTRY_OPTIONS.filter((c) => RECENT_COUNTRY_CODES.includes(c.code))
 
-  const year = viewDate.getFullYear()
-  const month = viewDate.getMonth()
-  const firstDay = new Date(year, month, 1).getDay()
-  const lastDate = new Date(year, month + 1, 0).getDate()
-  const cells: (number | null)[] = [
-    ...Array(firstDay).fill(null),
-    ...Array.from({ length: lastDate }, (_, i) => i + 1),
-  ]
+  const today = useMemo(() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d
+  }, [])
 
-  const handleDayClick = (day: number) => {
-    const clicked = formatDate(new Date(year, month, day))
-    if (!startDate || (startDate && endDate)) {
-      setValue('startDate', clicked, { shouldValidate: true })
-      setValue('endDate', '', { shouldValidate: true })
-      return
-    }
-    if (clicked < startDate) {
-      setValue('startDate', clicked, { shouldValidate: true })
-    } else {
-      setValue('endDate', clicked, { shouldValidate: true })
-    }
+  const selectedRange: DateRange | undefined = {
+    from: startDate ? new Date(startDate) : undefined,
+    to: endDate ? new Date(endDate) : undefined,
+  }
+
+  const handleRangeSelect = (range: DateRange | undefined) => {
+    setValue('startDate', range?.from ? formatDate(range.from) : '', { shouldValidate: true })
+    setValue('endDate', range?.to ? formatDate(range.to) : '', { shouldValidate: true })
   }
 
   // ── Step 2 · 모집 정보 ──
@@ -172,12 +175,9 @@ export function PostCreatePage() {
   const content = watch('content') ?? ''
   const kakaoUrl = watch('kakaoOpenChatUrl') ?? ''
   const isKakaoValid = !errors.kakaoOpenChatUrl && kakaoUrl.length > 0
-  const autoDeleteLabel = endDate
-    ? `${new Date(endDate).getMonth() + 1}월 ${new Date(endDate).getDate() + 1}일에 자동 삭제`
-    : '여행 종료 다음 날 자동 삭제'
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="pb-24">
+    <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="pb-24">
       <FormStepHeader step={step} totalSteps={TOTAL_STEPS} onBack={goBack} />
 
       {step === 1 && (
@@ -192,7 +192,10 @@ export function PostCreatePage() {
                   setCountryOpen((v) => !v)
                   setCityOpen(false)
                 }}
-                className="w-full flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2.5 text-sm cursor-pointer"
+                className={[
+                  'w-full flex items-center justify-between border rounded-xl px-3 py-2.5 text-sm cursor-pointer',
+                  showError(1, !!errors.country) ? 'border-red-400' : 'border-slate-200',
+                ].join(' ')}
               >
                 <span className="flex items-center gap-1.5">
                   {selectedCountry ? (
@@ -235,7 +238,10 @@ export function PostCreatePage() {
                   setCityOpen((v) => !v)
                   setCountryOpen(false)
                 }}
-                className="w-full flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2.5 text-sm disabled:opacity-40 cursor-pointer"
+                className={[
+                  'w-full flex items-center justify-between border rounded-xl px-3 py-2.5 text-sm disabled:opacity-40 cursor-pointer',
+                  showError(1, !!errors.city) ? 'border-red-400' : 'border-slate-200',
+                ].join(' ')}
               >
                 <span>
                   {selectedCountry?.cities.find((c) => c.code === watch('city'))?.name ?? (
@@ -263,7 +269,7 @@ export function PostCreatePage() {
               )}
             </div>
           </div>
-          {(errors.country || errors.city) && (
+          {showError(1, !!(errors.country || errors.city)) && (
             <p className="mt-1 text-xs text-red-500">{errors.country?.message ?? errors.city?.message}</p>
           )}
 
@@ -287,58 +293,64 @@ export function PostCreatePage() {
 
           <p className="mt-5 text-sm font-medium text-slate-700">여행 날짜</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <div className="border border-slate-200 rounded-xl px-3 py-2.5">
+            <div className={`border rounded-xl px-3 py-2.5 ${showError(1, !!errors.startDate) ? 'border-red-400' : 'border-slate-200'}`}>
               <p className="text-xs text-slate-400">출발</p>
               <p className="text-sm font-medium mt-0.5">{startDate ? formatDisplay(startDate) : '날짜 선택'}</p>
             </div>
-            <div className="border border-slate-200 rounded-xl px-3 py-2.5">
+            <div className={`border rounded-xl px-3 py-2.5 ${showError(1, !!errors.endDate) ? 'border-red-400' : 'border-slate-200'}`}>
               <p className="text-xs text-slate-400">도착</p>
               <p className="text-sm font-medium mt-0.5">{endDate ? formatDisplay(endDate) : '날짜 선택'}</p>
             </div>
           </div>
-          {errors.startDate && <p className="mt-1 text-xs text-red-500">{errors.startDate.message}</p>}
-          {errors.endDate && <p className="mt-1 text-xs text-red-500">{errors.endDate.message}</p>}
+          {showError(1, !!errors.startDate) && <p className="mt-1 text-xs text-red-500">{errors.startDate?.message}</p>}
+          {showError(1, !!errors.endDate) && <p className="mt-1 text-xs text-red-500">{errors.endDate?.message}</p>}
 
           <div className="mt-4">
-            <div className="flex items-center justify-between">
-              <button type="button" onClick={() => setViewDate(new Date(year, month - 1, 1))} className="cursor-pointer">
-                <ChevronLeft size={18} className="text-slate-400" />
-              </button>
-              <p className="text-sm font-medium">{year}년 {month + 1}월</p>
-              <button type="button" onClick={() => setViewDate(new Date(year, month + 1, 1))} className="cursor-pointer">
-                <ChevronRight size={18} className="text-slate-400" />
-              </button>
-            </div>
-            <div className="mt-3 grid grid-cols-7 text-center text-xs text-slate-400">
-              {['일', '월', '화', '수', '목', '금', '토'].map((d) => <div key={d} className="py-1">{d}</div>)}
-            </div>
-            <div className="grid grid-cols-7 text-center text-sm gap-y-1">
-              {cells.map((day, i) => {
-                if (day === null) return <div key={i} />
-                const iso = formatDate(new Date(year, month, day))
-                const isStart = iso === startDate
-                const isEnd = iso === endDate
-                const inRange = startDate && endDate && iso > startDate && iso < endDate
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleDayClick(day)}
-                    className={[
-                      'h-9 rounded-full cursor-pointer',
-                      isStart || isEnd ? 'bg-blue-600 text-white font-medium' : '',
-                      inRange ? 'bg-blue-50 text-blue-600' : '',
-                      !isStart && !isEnd && !inRange ? 'hover:bg-slate-50' : '',
-                    ].join(' ')}
-                  >
-                    {day}
-                  </button>
-                )
-              })}
-            </div>
+            <DayPicker
+              mode="range"
+              locale={ko}
+              selected={selectedRange}
+              onSelect={handleRangeSelect}
+              disabled={{ before: today }}
+              defaultMonth={startDate ? new Date(startDate) : today}
+              showOutsideDays
+              formatters={{
+                formatCaption: (date) => `${date.getFullYear()}년 ${date.getMonth() + 1}월`,
+              }}
+              components={{
+                Chevron: ({ orientation }) =>
+                  orientation === 'left' ? (
+                    <ChevronLeft size={18} className="text-slate-400" />
+                  ) : (
+                    <ChevronRight size={18} className="text-slate-400" />
+                  ),
+              }}
+              classNames={{
+                months: 'relative',
+                month: 'w-full',
+                month_caption: 'flex justify-center items-center h-9',
+                caption_label: 'text-sm font-medium text-slate-900',
+                nav: 'flex items-center justify-between absolute inset-x-0 top-0 h-9',
+                button_previous: 'cursor-pointer p-1',
+                button_next: 'cursor-pointer p-1',
+                month_grid: 'w-full mt-3 border-collapse',
+                weekdays: 'flex',
+                weekday: 'flex-1 text-center text-xs text-slate-400 font-normal py-1',
+                week: 'flex mt-1',
+                day: 'group flex-1 flex items-center justify-center p-0 text-sm',
+                day_button: [
+                  'h-9 w-9 rounded-full cursor-pointer hover:bg-slate-50',
+                  'group-data-[outside=true]:text-slate-300',
+                  'group-data-[today=true]:font-semibold group-data-[today=true]:text-blue-600',
+                  'group-data-[selected=true]:!bg-blue-600 group-data-[selected=true]:!text-white group-data-[selected=true]:font-medium',
+                  'group-data-[selected=true]:hover:!bg-blue-600',
+                  'group-data-[disabled=true]:!text-slate-300 group-data-[disabled=true]:opacity-40',
+                  'group-data-[disabled=true]:!cursor-not-allowed group-data-[disabled=true]:hover:!bg-transparent',
+                ].join(' '),
+                hidden: 'invisible',
+              }}
+            />
           </div>
-
-          <p className="mt-4 text-xs text-slate-400">날짜가 지나면 게시글은 자동 삭제돼요</p>
         </div>
       )}
 
@@ -401,7 +413,7 @@ export function PostCreatePage() {
               className={RANGE_THUMB_CLASS}
             />
           </div>
-          {errors.maxAge && <p className="mt-1 text-xs text-red-500">{errors.maxAge.message}</p>}
+          {showError(2, !!errors.maxAge) && <p className="mt-1 text-xs text-red-500">{errors.maxAge?.message}</p>}
 
           <p className="mt-6 text-sm font-medium text-slate-700">인원</p>
           <div className="mt-2 grid grid-cols-4 gap-2">
@@ -432,10 +444,10 @@ export function PostCreatePage() {
               {...register('title')}
               maxLength={30}
               placeholder="프라하 같이 다니실 여성분 구해요"
-              className="mt-2 w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-600"
+              className={`mt-2 w-full border rounded-xl px-3 py-2.5 text-sm outline-none ${showError(3, !!errors.title) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
             />
             <div className="flex items-center justify-between mt-1">
-              {errors.title ? <p className="text-xs text-red-500">{errors.title.message}</p> : <span />}
+              {showError(3, !!errors.title) ? <p className="text-xs text-red-500">{errors.title?.message}</p> : <span />}
               <p className="text-xs text-slate-400">{title.length} / 30</p>
             </div>
           </div>
@@ -447,10 +459,10 @@ export function PostCreatePage() {
               maxLength={500}
               rows={5}
               placeholder="일정, 같이 하고 싶은 것, 원하는 동행 스타일을 자유롭게 적어주세요"
-              className="mt-2 w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-600 resize-none"
+              className={`mt-2 w-full border rounded-xl px-3 py-2.5 text-sm outline-none resize-none ${showError(3, !!errors.content) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
             />
             <div className="flex items-center justify-between mt-1">
-              {errors.content ? <p className="text-xs text-red-500">{errors.content.message}</p> : <span />}
+              {showError(3, !!errors.content) ? <p className="text-xs text-red-500">{errors.content?.message}</p> : <span />}
               <p className="text-xs text-slate-400">{content.length} / 500</p>
             </div>
           </div>
@@ -462,35 +474,27 @@ export function PostCreatePage() {
               <input
                 {...register('kakaoOpenChatUrl')}
                 placeholder="open.kakao.com/o/xxxxxxx"
-                className="w-full border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-sm outline-none focus:border-blue-600"
+                className={`w-full border rounded-xl pl-9 pr-9 py-2.5 text-sm outline-none ${showError(3, !!errors.kakaoOpenChatUrl) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
               />
               {isKakaoValid && <Check size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600" />}
             </div>
-            {errors.kakaoOpenChatUrl && <p className="mt-1 text-xs text-red-500">{errors.kakaoOpenChatUrl.message}</p>}
+            {showError(3, !!errors.kakaoOpenChatUrl) && <p className="mt-1 text-xs text-red-500">{errors.kakaoOpenChatUrl?.message}</p>}
           </div>
 
           <div className="mt-4 flex items-start gap-2 text-xs text-slate-400">
             <ShieldCheck size={14} className="mt-0.5 shrink-0" />
             <p>참가자가 직접 이 링크로 들어와요. 카톡 ID는 공개되지 않아요.</p>
           </div>
-
-          <div className="mt-3 flex items-center gap-2 border border-slate-100 bg-slate-50 rounded-xl px-3 py-2.5">
-            <CalendarClock size={16} className="text-slate-400 shrink-0" />
-            <div>
-              <p className="text-sm font-medium">{autoDeleteLabel}</p>
-              <p className="text-xs text-slate-400">여행 종료 다음 날 게시글이 사라져요</p>
-            </div>
-          </div>
         </div>
       )}
 
       <div className="fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 bg-white px-4 py-3 border-t border-slate-100">
         {step < TOTAL_STEPS ? (
-          <button type="button" onClick={goNext} className="w-full py-3 rounded-xl bg-blue-600 text-white font-medium cursor-pointer">
+          <button key="next" type="button" onClick={goNext} className="w-full py-3 rounded-xl bg-blue-600 text-white font-medium cursor-pointer">
             다음
           </button>
         ) : (
-          <button type="submit" disabled={isPending} className="w-full py-3 rounded-xl bg-blue-600 text-white font-medium cursor-pointer disabled:opacity-50">
+          <button key="submit" type="submit" disabled={isPending} className="w-full py-3 rounded-xl bg-blue-600 text-white font-medium cursor-pointer disabled:opacity-50">
             {isPending ? '등록 중...' : '동행 모집 시작'}
           </button>
         )}
