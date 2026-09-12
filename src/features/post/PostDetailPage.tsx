@@ -102,11 +102,18 @@ export function PostDetailPage() {
         {/* 일정 */}
         <section className="mt-5">
           <p className="text-sm font-semibold text-slate-900">일정</p>
-          <div className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-100 bg-white text-sm">
+          <div className="mt-2 rounded-xl border border-slate-100 bg-white text-sm">
             <div className="flex items-center gap-2 px-3 py-4 text-slate-700">
               <Calendar className="h-4 w-4 text-slate-400" strokeWidth={2} />
               {formatDateRange(post.startDate, post.endDate)}
             </div>
+          </div>
+        </section>
+
+        {/* 소개 */}
+        <section className="mt-5">
+          <p className="text-sm font-semibold text-slate-900">소개</p>
+          <div className="mt-2 rounded-xl border border-slate-100 bg-white text-sm">
             <p className="whitespace-pre-line px-3 py-4 text-slate-600">{post.content}</p>
           </div>
         </section>
