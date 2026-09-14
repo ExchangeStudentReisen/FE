@@ -35,6 +35,16 @@ export function getPostDetail(id: string | number) {
   return fetchApi<PostDetailResponse>(`/api/posts/${id}`)
 }
 
+// 응답 필드셋이 GET /api/posts와 동일해 FeedListData/FeedItem을 그대로 재사용함
+export function getMyPosts(memberId: number, page: number, size = 10) {
+  const params = new URLSearchParams({
+    memberId: String(memberId),
+    page: String(page),
+    size: String(size),
+  })
+  return fetchApi<ApiResponse<FeedListData>>(`/api/posts/me?${params.toString()}`)
+}
+
 // 모집 조건(성별·나이·여행지) 충족 여부는 서버가 검증함 — 불충족 시 에러 응답
 export function getChatLink(postId: string | number, memberId: number) {
   return fetchApi<ApiResponse<ChatLinkApiData>>(
