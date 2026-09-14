@@ -3,26 +3,26 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Header } from '../../components/Header'
 import { KakaoChatModal } from '../../components/KakaoChatModal'
-import { usePostDetail } from '../../hooks/usePostDetail'
+import { usePostDetail } from '../../hooks/usePost'
 import { Calendar } from 'lucide-react'
 import {
   formatAgeFromBirthYear,
   formatAgeRange,
   formatDateRange,
   formatUpdatedDate,
-  getCityMeta,
   getGenderLabel,
 } from '../../utils/postDetailFormat'
-import type { RecruitGender } from '../../types/postDetail'
+import { getCityMeta } from '../../utils/countryMeta'
+import type { AuthorGender } from '../../types/post'
 import { useMyProfile } from '../../hooks/useMyProfile'
 
-function getPersonGenderLabel(gender: RecruitGender): string {
+function getPersonGenderLabel(gender: AuthorGender): string {
   return gender === 'FEMALE' ? '여성' : '남성'
 }
 
 export function PostDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const { data: post, isLoading, isError } = usePostDetail(id)
+  const { postId } = useParams<{ postId: string }>()
+  const { data: post, isLoading, isError } = usePostDetail(postId)
   const { data: myProfile } = useMyProfile()
   const [isChatModalOpen, setIsChatModalOpen] = useState(false)
 
@@ -59,7 +59,7 @@ export function PostDetailPage() {
         {/* 국가 */}
         <div className="flex items-center gap-2">
           <p className="text-sm text-slate-500">
-            {city.flag} {city.label}
+            {city.flag} {city.cityLabel}
           </p>
         </div>
 
@@ -102,11 +102,18 @@ export function PostDetailPage() {
         {/* 일정 */}
         <section className="mt-5">
           <p className="text-sm font-semibold text-slate-900">일정</p>
-          <div className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-100 bg-white text-sm">
+          <div className="mt-2 rounded-xl border border-slate-100 bg-white text-sm">
             <div className="flex items-center gap-2 px-3 py-4 text-slate-700">
               <Calendar className="h-4 w-4 text-slate-400" strokeWidth={2} />
               {formatDateRange(post.startDate, post.endDate)}
             </div>
+          </div>
+        </section>
+
+        {/* 소개 */}
+        <section className="mt-5">
+          <p className="text-sm font-semibold text-slate-900">소개</p>
+          <div className="mt-2 rounded-xl border border-slate-100 bg-white text-sm">
             <p className="whitespace-pre-line px-3 py-4 text-slate-600">{post.content}</p>
           </div>
         </section>

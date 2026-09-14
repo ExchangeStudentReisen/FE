@@ -6,12 +6,10 @@ import { FeedPostCard } from '../../components/FeedPostCard'
 import { useInfiniteFeed } from '../../hooks/useInfiniteFeed'
 import { useInfiniteScrollTrigger } from '../../hooks/useInfiniteScrollerTrigger'
 import { matchesQuery } from '../../utils/hangul'
-import { getCountryOptions } from '../../utils/cityMeta'
+import { getCountryOptions } from '../../utils/countryMeta'
 import type { FeedFilterOptions, FeedFilters } from '../../types/feed'
 import { useMyProfile } from '../../hooks/useMyProfile'
 import { isEligibleForPost } from '../../utils/eligibility'
-import { useEffect } from 'react'
-import { useMe } from '../../hooks/useAuth'
 
 const FILTER_OPTIONS: FeedFilterOptions = {
   countries: getCountryOptions(),
@@ -34,13 +32,6 @@ const DEFAULT_FILTERS: FeedFilters = {
 }
 
 export function FeedPage() {
-
-  // 아래 코드 삭제 예정
-    const { data: meData, error: meError} = useMe()
-  useEffect(() => {
-    if (meData) console.log('me 응답:', meData.data)
-    if (meError) console.log('me 에러:', meError)
-  }, [meData, meError])
   const [filters, setFilters] = useState<FeedFilters>(DEFAULT_FILTERS)
   const [searchInput, setSearchInput] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -54,8 +45,18 @@ export function FeedPage() {
 
   const items = data?.pages.flatMap((page) => page.items) ?? []
 
+  // keyword/sort는 GET /api/posts 쿼리 파라미터에 없어 서버가 아닌 프론트에서 처리
+  // (불러온 페이지 내에서만 동작 — 백엔드 검색/정렬 파라미터가 추가되면 useInfiniteFeed로 이전)
+  const keyword = filters.keyword.trim().toLowerCase()
+  const searchedItems = keyword ? items.filter((item) => item.title.toLowerCase().includes(keyword)) : items
+
+  // 최신순은 백엔드가 이미 수정일 기준 내림차순으로 내려주는 순서를 그대로 사용
+  // (updatedAt으로 프론트에서 다시 정렬하면 조회수 증가로 updatedAt이 갱신된 글이 "읽은 순서대로" 위로 튀어오름)
+  const sortedItems =
+    filters.sort === 'latest' ? searchedItems : [...searchedItems].sort((a, b) => b.view - a.view)
+
   const visibleItems =
-    onlyEligible && myProfile ? items.filter((item) => isEligibleForPost(myProfile, item)) : items
+    onlyEligible && myProfile ? sortedItems.filter((item) => isEligibleForPost(myProfile, item)) : sortedItems
 
   const suggestions = searchInput.trim()
     ? getCountryOptions().filter((c) => matchesQuery(searchInput.trim(), c.label))

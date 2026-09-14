@@ -3,12 +3,12 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
-import { useSendVerification, useVerifyCode } from '../../hooks/useVerfication'
+import { useSendVerification, useVerifyCode } from '../../hooks/useVerification'
 import { useSignup } from '../../hooks/useAuth'
 import { useSignupStore } from '../../stores/signupStore'
 import { useSchools, useReportDomain } from '../../hooks/useSchools'
 import type { School } from '../../types/school'
-import type { VerifiedProfileData } from '../../types/verfication'
+import type { VerifiedProfileData } from '../../types/verification'
 
 // 영문자 1개 이상 포함 + 영문/숫자만 허용
 const LOCAL_PART_REGEX = /^(?=.*[a-zA-Z])[a-zA-Z0-9]{2,}$/

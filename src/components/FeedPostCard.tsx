@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { Calendar } from 'lucide-react'
 import { truncateContent, formatRelativeTime } from '../utils/feedFormat'
-import { formatAgeRange, formatDateRange as formatDetailDateRange, getGenderLabel, getCityMeta } from '../utils/postDetailFormat'
+import { formatAgeRange, getGenderLabel } from '../utils/postDetailFormat'
 import { formatDateRange as formatCardDateRange } from '../utils/feedFormat'
+import { getCityMeta } from '../utils/countryMeta'
 
 interface FeedPostCardProps {
   id: number
@@ -34,7 +35,7 @@ export function FeedPostCard({
   updatedAt,
 }: FeedPostCardProps) {
   const navigate = useNavigate()
-  const { flag, label } = getCityMeta(travelCity)
+  const { flag, cityLabel } = getCityMeta(travelCity)
 
   return (
     <button
@@ -43,7 +44,7 @@ export function FeedPostCard({
     >
       <div className="flex items-center justify-between">
         <span className="text-base font-bold text-slate-900">
-          {flag} {label}
+          {flag} {cityLabel}
         </span>
         <span
           className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${

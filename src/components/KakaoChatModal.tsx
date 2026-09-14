@@ -1,5 +1,5 @@
 import kakaoLogo from '../assets/kakaotalk_sharing_btn_medium.png'
-import { useChatLink } from '../hooks/useChatLink'
+import { useChatLink } from '../hooks/usePost'
 
 interface KakaoChatModalProps {
   open: boolean

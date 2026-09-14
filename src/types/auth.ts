@@ -1,11 +1,13 @@
 // types/auth.ts
 import type { ApiResponse } from './api'
 
+export type MemberGender = 'MALE' | 'FEMALE'
+
 export interface MeData {
   id: number
   name: string
   email: string
-  gender: 'MALE' | 'FEMALE'
+  gender: MemberGender
   birthYear: number
   dispatchCountry: string
   emailVerified: boolean
@@ -17,7 +19,7 @@ export interface MeData {
 
 export interface PendingData {
   nickname: string
-  gender: 'MALE' | 'FEMALE' | null
+  gender: MemberGender | null
   birthYear: number
 }
 
@@ -25,7 +27,7 @@ export interface SignupPayload {
   pendingKey: string
   name: string
   dispatchCountry: string
-  gender?: 'MALE' | 'FEMALE'
+  gender?: MemberGender
 }
 
 export interface ReissuePayload {

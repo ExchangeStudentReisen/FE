@@ -1,7 +1,4 @@
-// 05번 모집글 작성 화면의 3단계 입력값 기준
-export type TravelStyle =
-  | '카페' | '야경' | '관광' | '미술관' | '공연' | '맛집'
-  | '저렴이' | '브런치' | '쇼핑' | '역사' | '야시장' | '느긋'
+import type { Country, PostRecruitGender } from './post'
 
 // 피드에서 다른 사용자들에게 보여주는 모집글 데이터
 // (백엔드 응답 data[] 각 항목 기준 + 화면 전용 파생값)
@@ -11,10 +8,10 @@ export interface FeedItem {
   content: string
   startAge: number
   endAge: number
-  gender: 'MALE' | 'FEMALE' | 'OTHER' | null // null, OTHER는 성별 무관(전체)
+  gender: PostRecruitGender | null // null, OTHER는 성별 무관(전체)
   startDate: string // ISO date
   endDate: string
-  travelCity: string // ex) 'GERMANY'
+  travelCity: Country
   isRecruiting: boolean
   view: number
   clickCnt: number
@@ -22,8 +19,8 @@ export interface FeedItem {
 }
 
 export interface FeedFilters {
-  travelCity?: string // undefined/null이면 전체
-  gender?: 'MALE' | 'FEMALE' | 'OTHER' // undefined/null이면 전체
+  travelCity?: Country // undefined/null이면 전체
+  gender?: PostRecruitGender // undefined/null이면 전체
   startAge?: number
   endAge?: number
   startDate?: string // ISO date
@@ -37,8 +34,18 @@ export interface FeedPageResult {
   nextPage: number | null
 }
 
+// GET /api/posts 응답의 data 필드 (Spring Page 형태)
+export interface FeedListData {
+  content: FeedItem[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  hasNext: boolean
+}
+
 // 필터 UI에 들어갈 옵션들 — 실제 값은 사용하는 쪽에서 정의
 export interface FeedFilterOptions {
   countries: { value: string; label: string }[] // getCountryOptions()로 채움
-  genders: { value: 'MALE' | 'FEMALE' | 'OTHER'; label: string }[]
+  genders: { value: PostRecruitGender; label: string }[]
 }

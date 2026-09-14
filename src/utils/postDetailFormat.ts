@@ -1,26 +1,13 @@
-import type { TravelCity, RecruitGender } from '../types/postDetail'
+import type { PostRecruitGender } from '../types/post'
+import { calculateAge } from './eligibility'
 
-
-const CITY_META: Record<TravelCity, { flag: string; label: string }> = {
-  GERMANY: { flag: '🇩🇪', label: 'Germany' },
-  FRANCE: { flag: '🇫🇷', label: 'France' },
-  ITALY: { flag: '🇮🇹', label: 'Italy' },
-  CZECH: { flag: '🇨🇿', label: 'Czech' },
-  AUSTRIA: { flag: '🇦🇹', label: 'Austria' },
-  SPAIN: { flag: '🇪🇸', label: 'Spain' },
-}
-
-const GENDER_LABEL: Record<'MALE' | 'FEMALE' | 'OTHER', string> = {
+const GENDER_LABEL: Record<PostRecruitGender, string> = {
   FEMALE: '여성만',
   MALE: '남성만',
   OTHER: '성별무관',
 }
 
-export function getCityMeta(city: string) {
-  return CITY_META[city as TravelCity] ?? { flag: '🌍', label: city }
-}
-
-export function getGenderLabel(gender: RecruitGender | 'OTHER' | null) {
+export function getGenderLabel(gender: PostRecruitGender | null) {
   if (!gender) return '성별무관'
   return GENDER_LABEL[gender] ?? gender
 }
@@ -51,5 +38,5 @@ export function formatUpdatedDate(updatedAt: string): string {
 }
 
 export function formatAgeFromBirthYear(birthYear: number): number {
-  return new Date().getFullYear() - birthYear
+  return calculateAge(birthYear)
 }

@@ -1,11 +1,9 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, User, X } from 'lucide-react'
-import { useAuthTokenStore } from '../stores/authTokenStore'
 import { useLogout } from '../hooks/useAuth'
 
 const PAGE_LABEL: Record<string, string> = {
   '/feed': 'Reisen',
-  '/search': '탐색',
   '/post/new': '글쓰기',
   '/profile': '프로필 페이지',
 }
@@ -13,7 +11,6 @@ const PAGE_LABEL: Record<string, string> = {
 function getLabel(pathname: string) {
   if (pathname.startsWith('/post/new')) return PAGE_LABEL['/post/new']
   if (pathname.startsWith('/profile')) return PAGE_LABEL['/profile']
-  if (pathname.startsWith('/search')) return PAGE_LABEL['/search']
   return PAGE_LABEL['/feed']
 }
 
@@ -41,7 +38,7 @@ export function Header() {
       <div className="flex items-center gap-2">
         {showBack && (
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/feed')}
             className="cursor-pointer -ml-1 w-7 h-7 flex items-center justify-center shrink-0 text-slate-700"
             aria-label="뒤로가기"
           >

@@ -1,3 +1,5 @@
+import type { MemberGender } from './auth'
+
 export interface SendVerificationPayload {
   pendingKey: string
   schoolId: number
@@ -13,7 +15,7 @@ export interface VerifyCodePayload {
 
 export interface VerifiedProfileData {
   nickname: string
-  gender: 'MALE' | 'FEMALE' | null
+  gender: MemberGender | null
   birthYear: number
   email: string
   schoolId: number
