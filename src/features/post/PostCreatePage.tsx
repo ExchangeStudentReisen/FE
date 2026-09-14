@@ -129,12 +129,6 @@ export function PostCreatePage() {
     values: editingValues,
   })
 
-  // 모집 상태(모집중/마감)는 새 글에는 없는 개념이라 폼 스키마 밖에서 별도로 관리 — 수정 모드 진입 시 기존 값으로 맞춤
-  const [isRecruiting, setIsRecruiting] = useState(true)
-  useEffect(() => {
-    if (editingPost) setIsRecruiting(editingPost.isRecruiting)
-  }, [editingPost])
-
   const createMutation = useMutation({
     mutationFn: (payload: CreatePostRequest) => createPost(payload),
     onSuccess: (res) => {
@@ -174,7 +168,8 @@ export function PostCreatePage() {
       travelCity: values.country as Country, // country는 COUNTRY_OPTIONS(백엔드 Country enum 값)에서만 선택되므로 안전한 캐스팅
     }
     if (isEditMode) {
-      updateMutation.mutate({ ...payload, isRecruiting })
+      // 모집 상태(모집중/마감)는 이 폼이 아니라 글 상세 페이지에서 별도로 변경함 — 기존 값 그대로 전달
+      updateMutation.mutate({ ...payload, isRecruiting: editingPost?.isRecruiting ?? true })
     } else {
       createMutation.mutate(payload)
     }
@@ -258,34 +253,6 @@ export function PostCreatePage() {
       <div className="px-4 pb-4">
         <p className="mt-2 text-sm font-medium text-primary">{isEditMode ? '모집글 수정' : '모집글 작성'}</p>
         <h1 className="text-lg font-bold text-slate-900">어디로, 언제 가나요?</h1>
-
-        {isEditMode && (
-          <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
-            <p className="text-sm font-medium text-slate-700">모집 상태</p>
-            <div className="flex gap-1.5">
-              <button
-                type="button"
-                onClick={() => setIsRecruiting(true)}
-                className={[
-                  'py-1.5 px-3 rounded-full text-xs border cursor-pointer',
-                  isRecruiting ? 'border-blue-600 bg-blue-600 text-white font-medium' : 'border-slate-200 text-slate-500',
-                ].join(' ')}
-              >
-                모집중
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsRecruiting(false)}
-                className={[
-                  'py-1.5 px-3 rounded-full text-xs border cursor-pointer',
-                  !isRecruiting ? 'border-blue-600 bg-blue-600 text-white font-medium' : 'border-slate-200 text-slate-500',
-                ].join(' ')}
-              >
-                마감
-              </button>
-            </div>
-          </div>
-        )}
 
         <p className="mt-5 text-sm font-medium text-slate-700">국가 · 도시</p>
         <div className="mt-2 grid grid-cols-2 gap-2">
