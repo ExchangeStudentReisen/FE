@@ -1,17 +1,32 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { DayPicker, type DateRange } from 'react-day-picker'
 import { ko } from 'react-day-picker/locale'
 import { ChevronLeft, ChevronRight, ChevronDown, Link as LinkIcon, ShieldCheck, X } from 'lucide-react'
 import { createPostCreateSchema, type PostCreateFormValues } from '../../schemas/postCreateSchema'
-import { RECRUIT_GENDER_TO_API, type CreatePostRequest, type RecruitGender, type Country } from '../../types/post'
+import {
+  RECRUIT_GENDER_TO_API,
+  type CreatePostRequest,
+  type UpdatePostRequest,
+  type RecruitGender,
+  type PostRecruitGender,
+  type Country,
+} from '../../types/post'
 import { COUNTRY_OPTIONS, RECENT_COUNTRY_CODES } from '../../mocks/countryMock'
 import { useMyProfile } from '../../hooks/useMyProfile'
+import { usePostDetail } from '../../hooks/usePost'
 import { calculateAge } from '../../utils/eligibility'
-import { createPost } from '../../api/post'
+import { createPost, updatePost, getChatLink } from '../../api/post'
+
+// PUT /api/posts/{id}·POST /api/posts 응답 모두 gender는 ApiGender/PostRecruitGender 값을 공유하므로 역매핑에 사용
+function apiGenderToRecruit(gender: PostRecruitGender): RecruitGender {
+  if (gender === 'FEMALE') return 'female'
+  if (gender === 'MALE') return 'male'
+  return 'any'
+}
 
 // Step 2 · 모집 정보
 const GENDER_OPTIONS: { value: RecruitGender; label: string }[] = [
@@ -58,12 +73,50 @@ function formatDisplay(iso: string) {
 
 export function PostCreatePage() {
   const navigate = useNavigate()
+  const { postId } = useParams<{ postId?: string }>()
+  const isEditMode = !!postId
 
   const { data: myProfile } = useMyProfile()
+  const { data: editingPost, isLoading: isEditingPostLoading } = usePostDetail(isEditMode ? postId : undefined)
+
+  // 수정 권한은 서버가 최종 검증하지만(작성자 본인만 수정 가능), 클라이언트에서도 다른 사람 글로 잘못 들어오면 바로 돌려보냄
+  useEffect(() => {
+    if (isEditMode && editingPost && myProfile && editingPost.authorId !== myProfile.id) {
+      navigate(`/post/${postId}`, { replace: true })
+    }
+  }, [isEditMode, editingPost, myProfile, postId, navigate])
+
   // 서비스 연령 범위(20~30세) 밖이면(프로필 미로딩 포함) 나이 범위 검증을 건너뜀
   const myAge = myProfile ? calculateAge(myProfile.birthYear) : undefined
   const myAgeForValidation = myAge !== undefined && myAge >= MIN_AGE && myAge <= MAX_AGE ? myAge : undefined
   const schema = useMemo(() => createPostCreateSchema(myAgeForValidation), [myAgeForValidation])
+
+  // GET /api/posts/{id}는 kakaotalkLink를 안 내려줘서 별도 엔드포인트로 받아옴 — 수정 모드에선 이 값을 그대로 쓰고 수정 불가
+  const { data: chatLinkRes } = useQuery({
+    queryKey: ['postKakaoLink', postId, myProfile?.id],
+    queryFn: () => getChatLink(postId as string, myProfile?.id as number),
+    enabled: isEditMode && !!postId && !!myProfile?.id,
+  })
+  const existingKakaoLink = chatLinkRes?.data?.kakaotalkLink ?? ''
+
+  // 수정 모드일 때만 기존 글 값으로 폼을 채움
+  const editingValues: PostCreateFormValues | undefined = useMemo(() => {
+    if (!editingPost) return undefined
+    const country = COUNTRY_OPTIONS.find((c) => c.code === editingPost.travelCity)
+    return {
+      country: editingPost.travelCity,
+      city: country?.cities[0]?.code ?? '',
+      startDate: editingPost.startDate,
+      endDate: editingPost.endDate,
+      recruitGender: apiGenderToRecruit(editingPost.gender),
+      minAge: editingPost.startAge,
+      maxAge: editingPost.endAge,
+      headcount: editingPost.maxMembers,
+      title: editingPost.title,
+      content: editingPost.content,
+      kakaoOpenChatUrl: existingKakaoLink,
+    }
+  }, [editingPost, existingKakaoLink])
 
   const { watch, setValue, register, handleSubmit, formState: { errors } } = useForm<PostCreateFormValues>({
     resolver: zodResolver(schema),
@@ -73,15 +126,31 @@ export function PostCreatePage() {
       recruitGender: 'any', minAge: 20, maxAge: 23, headcount: 2,
       title: '', content: '', kakaoOpenChatUrl: '',
     },
+    values: editingValues,
   })
 
-  const { mutate, isPending } = useMutation({
+  // 모집 상태(모집중/마감)는 새 글에는 없는 개념이라 폼 스키마 밖에서 별도로 관리 — 수정 모드 진입 시 기존 값으로 맞춤
+  const [isRecruiting, setIsRecruiting] = useState(true)
+  useEffect(() => {
+    if (editingPost) setIsRecruiting(editingPost.isRecruiting)
+  }, [editingPost])
+
+  const createMutation = useMutation({
     mutationFn: (payload: CreatePostRequest) => createPost(payload),
     onSuccess: (res) => {
       // TODO: result !== 'SUCCESS' 케이스(실패 응답) 핸들링 필요 — 백엔드 에러 스펙 확인 후 추가
       navigate(`/post/${res.data.id}`)
     },
   })
+
+  const updateMutation = useMutation({
+    mutationFn: (payload: UpdatePostRequest) => updatePost(postId as string, myProfile?.id as number, payload),
+    onSuccess: (res) => {
+      navigate(`/post/${res.data.id}`)
+    },
+  })
+
+  const isPending = isEditMode ? updateMutation.isPending : createMutation.isPending
 
   // 제출을 한 번이라도 시도했는지 — 시도 전에는 미입력 필드를 빨갛게 표시하지 않음
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
@@ -92,7 +161,7 @@ export function PostCreatePage() {
   }
 
   const onSubmit = (values: PostCreateFormValues) => {
-    mutate({
+    const payload = {
       title: values.title,
       content: values.content,
       kakaotalkLink: values.kakaoOpenChatUrl,
@@ -103,7 +172,12 @@ export function PostCreatePage() {
       startDate: values.startDate,
       endDate: values.endDate,
       travelCity: values.country as Country, // country는 COUNTRY_OPTIONS(백엔드 Country enum 값)에서만 선택되므로 안전한 캐스팅
-    })
+    }
+    if (isEditMode) {
+      updateMutation.mutate({ ...payload, isRecruiting })
+    } else {
+      createMutation.mutate(payload)
+    }
   }
 
   // ── 도시 · 날짜 ──
@@ -159,6 +233,15 @@ export function PostCreatePage() {
   const title = watch('title') ?? ''
   const content = watch('content') ?? ''
 
+  if (isEditMode && (isEditingPostLoading || !editingPost)) {
+    return (
+      <div className="px-4 pt-6 flex flex-col gap-3">
+        <div className="h-6 w-2/3 rounded bg-slate-100 animate-pulse" />
+        <div className="h-40 rounded-xl bg-slate-100 animate-pulse" />
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="pb-24">
       <div className="sticky top-0 z-10 bg-white px-4 pt-3 pb-2 flex items-center h-9">
@@ -173,8 +256,36 @@ export function PostCreatePage() {
       </div>
 
       <div className="px-4 pb-4">
-        <p className="mt-2 text-sm font-medium text-primary">모집글 작성</p>
+        <p className="mt-2 text-sm font-medium text-primary">{isEditMode ? '모집글 수정' : '모집글 작성'}</p>
         <h1 className="text-lg font-bold text-slate-900">어디로, 언제 가나요?</h1>
+
+        {isEditMode && (
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+            <p className="text-sm font-medium text-slate-700">모집 상태</p>
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsRecruiting(true)}
+                className={[
+                  'py-1.5 px-3 rounded-full text-xs border cursor-pointer',
+                  isRecruiting ? 'border-blue-600 bg-blue-600 text-white font-medium' : 'border-slate-200 text-slate-500',
+                ].join(' ')}
+              >
+                모집중
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsRecruiting(false)}
+                className={[
+                  'py-1.5 px-3 rounded-full text-xs border cursor-pointer',
+                  !isRecruiting ? 'border-blue-600 bg-blue-600 text-white font-medium' : 'border-slate-200 text-slate-500',
+                ].join(' ')}
+              >
+                마감
+              </button>
+            </div>
+          </div>
+        )}
 
         <p className="mt-5 text-sm font-medium text-slate-700">국가 · 도시</p>
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -459,12 +570,16 @@ export function PostCreatePage() {
 
         <div className="mt-4">
           <p className="text-sm font-medium text-slate-700">카카오 오픈채팅 링크</p>
+          {isEditMode && (
+            <p className="mt-1 text-xs text-slate-400">카카오 오픈채팅 링크는 수정할 수 없어요</p>
+          )}
           <div className="mt-2 relative">
             <LinkIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               {...register('kakaoOpenChatUrl')}
+              readOnly={isEditMode}
               placeholder="open.kakao.com/o/xxxxxxx"
-              className={`w-full border rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none ${showError(!!errors.kakaoOpenChatUrl) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
+              className={`w-full border rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none ${isEditMode ? 'bg-slate-50 text-slate-500' : ''} ${showError(!!errors.kakaoOpenChatUrl) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
             />
           </div>
           {showError(!!errors.kakaoOpenChatUrl) && <p className="mt-1 text-xs text-red-500">{errors.kakaoOpenChatUrl?.message}</p>}
@@ -478,7 +593,9 @@ export function PostCreatePage() {
 
       <div className="fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 bg-white px-4 py-3 border-t border-slate-100">
         <button type="submit" disabled={isPending} className="w-full py-3 rounded-xl bg-blue-600 text-white font-medium cursor-pointer disabled:opacity-50">
-          {isPending ? '등록 중...' : '동행 모집 시작'}
+          {isEditMode
+            ? isPending ? '수정 중...' : '수정 완료'
+            : isPending ? '등록 중...' : '동행 모집 시작'}
         </button>
       </div>
     </form>

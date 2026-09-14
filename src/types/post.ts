@@ -54,6 +54,22 @@ export interface CreatePostResponseData {
   updatedAt: string
 }
 
+// ---- 여기서부터 PUT /api/posts/{id} 요청 스키마 기준으로 추가 ----
+// 작성자 본인만 수정 가능 — 응답은 GET /api/posts/{id}와 동일해 PostDetailResponse를 그대로 재사용함
+export interface UpdatePostRequest {
+  title: string
+  content: string
+  kakaotalkLink: string
+  maxMembers: number
+  startAge: number
+  endAge: number
+  gender: ApiGender
+  startDate: string
+  endDate: string
+  travelCity: Country
+  isRecruiting: boolean
+}
+
 // ---- 여기서부터 GET /api/posts/{id} 응답 스키마 기준으로 추가 (구 types/postDetail.ts) ----
 
 // 작성자 실제 성별 — 모집 선호 성별과 달리 OTHER(성별무관) 없음

@@ -5,6 +5,7 @@ import type {
   CreatePostRequest,
   CreatePostResponseData,
   PostDetailResponse,
+  UpdatePostRequest,
 } from '../types/post'
 import type { FeedFilters, FeedListData } from '../types/feed'
 
@@ -33,6 +34,15 @@ export function getPosts(filters: FeedFilters, page: number, size = 10) {
 
 export function getPostDetail(id: string | number) {
   return fetchApi<PostDetailResponse>(`/api/posts/${id}`)
+}
+
+// 작성자 본인만 수정 가능 — 서버가 Authorization 헤더로 검증하지만 memberId도 쿼리로 함께 전달
+export function updatePost(id: string | number, memberId: number, payload: UpdatePostRequest) {
+  return fetchApi<PostDetailResponse>(`/api/posts/${id}?memberId=${memberId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json' },
+  })
 }
 
 // 응답 필드셋이 GET /api/posts와 동일해 FeedListData/FeedItem을 그대로 재사용함

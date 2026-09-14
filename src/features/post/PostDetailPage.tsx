@@ -1,10 +1,10 @@
 // pages/post/PostDetailPage.tsx
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Header } from '../../components/Header'
 import { KakaoChatModal } from '../../components/KakaoChatModal'
 import { usePostDetail } from '../../hooks/usePost'
-import { Calendar } from 'lucide-react'
+import { Calendar, Pencil } from 'lucide-react'
 import {
   formatAgeFromBirthYear,
   formatAgeRange,
@@ -21,6 +21,7 @@ function getPersonGenderLabel(gender: AuthorGender): string {
 }
 
 export function PostDetailPage() {
+  const navigate = useNavigate()
   const { postId } = useParams<{ postId: string }>()
   const { data: post, isLoading, isError } = usePostDetail(postId)
   const { data: myProfile } = useMyProfile()
@@ -50,6 +51,7 @@ export function PostDetailPage() {
   }
 
   const city = getCityMeta(post.travelCity)
+  const isAuthor = myProfile?.id === post.authorId
 
   return (
     <div className="relative min-h-screen bg-[#f7fafe] pb-24">
@@ -86,6 +88,16 @@ export function PostDetailPage() {
           <span className="text-xs text-slate-400">
             최종 수정 {formatUpdatedDate(post.updatedAt)}
           </span>
+          {isAuthor && (
+            <button
+              type="button"
+              onClick={() => navigate(`/post/${post.id}/edit`)}
+              className="ml-auto flex items-center gap-1 text-xs font-medium text-blue-600 cursor-pointer"
+            >
+              <Pencil size={12} />
+              수정하기
+            </button>
+          )}
         </div>
 
         {/* 작성자 */}
