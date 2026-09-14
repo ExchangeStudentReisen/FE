@@ -45,6 +45,13 @@ export function updatePost(id: string | number, memberId: number, payload: Updat
   })
 }
 
+// 작성자 본인만 삭제 가능
+export function deletePost(id: string | number, memberId: number) {
+  return fetchApi<ApiResponse<string>>(`/api/posts/${id}?memberId=${memberId}`, {
+    method: 'DELETE',
+  })
+}
+
 // 응답 필드셋이 GET /api/posts와 동일해 FeedListData/FeedItem을 그대로 재사용함
 export function getMyPosts(memberId: number, page: number, size = 10) {
   const params = new URLSearchParams({

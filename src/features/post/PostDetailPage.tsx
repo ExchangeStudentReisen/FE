@@ -1,10 +1,12 @@
 // pages/post/PostDetailPage.tsx
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
 import { Header } from '../../components/Header'
 import { KakaoChatModal } from '../../components/KakaoChatModal'
 import { usePostDetail } from '../../hooks/usePost'
-import { Calendar, Pencil } from 'lucide-react'
+import { deletePost } from '../../api/post'
+import { Calendar, Pencil, Trash2 } from 'lucide-react'
 import {
   formatAgeFromBirthYear,
   formatAgeRange,
@@ -26,6 +28,12 @@ export function PostDetailPage() {
   const { data: post, isLoading, isError } = usePostDetail(postId)
   const { data: myProfile } = useMyProfile()
   const [isChatModalOpen, setIsChatModalOpen] = useState(false)
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deletePost(postId as string, myProfile?.id as number),
+    onSuccess: () => navigate('/feed', { replace: true }),
+  })
 
   if (isLoading) {
     return (
@@ -89,14 +97,24 @@ export function PostDetailPage() {
             최종 수정 {formatUpdatedDate(post.updatedAt)}
           </span>
           {isAuthor && (
-            <button
-              type="button"
-              onClick={() => navigate(`/post/${post.id}/edit`)}
-              className="ml-auto flex items-center gap-1 text-xs font-medium text-blue-600 cursor-pointer"
-            >
-              <Pencil size={12} />
-              수정하기
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/post/${post.id}/edit`)}
+                className="flex items-center gap-1 text-xs font-medium text-blue-600 cursor-pointer"
+              >
+                <Pencil size={12} />
+                수정하기
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsDeleteConfirmOpen(true)}
+                className="flex items-center gap-1 text-xs font-medium text-red-500 cursor-pointer"
+              >
+                <Trash2 size={12} />
+                삭제하기
+              </button>
+            </div>
           )}
         </div>
 
@@ -165,6 +183,43 @@ export function PostDetailPage() {
         postId={post.id.toString()}
         memberId={myProfile?.id}
       />
+
+      {isDeleteConfirmOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6"
+          onClick={() => setIsDeleteConfirmOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-bold text-slate-900">모집글을 삭제할까요?</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              삭제하면 되돌릴 수 없어요.
+            </p>
+
+            {deleteMutation.isError && (
+              <p className="mt-3 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-500">
+                삭제에 실패했어요. 다시 시도해주세요.
+              </p>
+            )}
+
+            <button
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="mt-4 w-full rounded-xl bg-red-500 py-3 text-sm font-bold text-white cursor-pointer disabled:opacity-50"
+            >
+              {deleteMutation.isPending ? '삭제 중...' : '삭제하기'}
+            </button>
+            <button
+              onClick={() => setIsDeleteConfirmOpen(false)}
+              className="mt-2 w-full rounded-xl bg-slate-100 py-3 text-sm font-medium text-slate-600 cursor-pointer"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
