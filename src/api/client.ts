@@ -5,7 +5,9 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL
 let isRefreshing = false
 let refreshPromise: Promise<string | null> | null = null
 
-async function refreshAccessToken(): Promise<string | null> {
+// RequireAuth가 새로고침 직후 accessToken 복구용으로도 호출하므로,
+// 아래의 isRefreshing/refreshPromise 가드를 공유해 중복 재발급(refreshToken 재사용 실패)을 막는다.
+export async function refreshAccessToken(): Promise<string | null> {
   const { refreshToken, setTokens, clearTokens } = useAuthTokenStore.getState()
   if (!refreshToken) return null
 
