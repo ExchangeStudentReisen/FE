@@ -54,10 +54,3 @@ export function createPostCreateSchema(myAge?: number) {
       path: ['maxAge'],
     })
 }
-
-// 스텝별 필드 (다음 버튼 클릭 시 해당 스텝만 trigger)
-export const STEP_FIELDS = {
-  1: ['country', 'city', 'startDate', 'endDate'],
-  2: ['recruitGender', 'minAge', 'maxAge', 'headcount'],
-  3: ['title', 'content', 'kakaoOpenChatUrl'],
-} as const satisfies Record<number, (keyof PostCreateFormValues)[]>

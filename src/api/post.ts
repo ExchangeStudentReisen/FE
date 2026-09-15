@@ -5,6 +5,7 @@ import type {
   CreatePostRequest,
   CreatePostResponseData,
   PostDetailResponse,
+  UpdatePostRequest,
 } from '../types/post'
 import type { FeedFilters, FeedListData } from '../types/feed'
 
@@ -33,6 +34,41 @@ export function getPosts(filters: FeedFilters, page: number, size = 10) {
 
 export function getPostDetail(id: string | number) {
   return fetchApi<PostDetailResponse>(`/api/posts/${id}`)
+}
+
+// 작성자 본인만 수정 가능 — 서버가 Authorization 헤더로 검증하지만 memberId도 쿼리로 함께 전달
+export function updatePost(id: string | number, memberId: number, payload: UpdatePostRequest) {
+  return fetchApi<PostDetailResponse>(`/api/posts/${id}?memberId=${memberId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+// 작성자 본인만 삭제 가능
+export function deletePost(id: string | number, memberId: number) {
+  return fetchApi<ApiResponse<string>>(`/api/posts/${id}?memberId=${memberId}`, {
+    method: 'DELETE',
+  })
+}
+
+// 작성자 본인만 변경 가능 — 마감(false)으로 바뀐 뒤에는 다시 모집중(true)으로 되돌릴 수 없음(프론트에서 UI로 막음)
+export function updateRecruitingStatus(id: string | number, memberId: number, isRecruiting: boolean) {
+  return fetchApi<PostDetailResponse>(`/api/posts/${id}/recruiting-status?memberId=${memberId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isRecruiting }),
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+// 응답 필드셋이 GET /api/posts와 동일해 FeedListData/FeedItem을 그대로 재사용함
+export function getMyPosts(memberId: number, page: number, size = 10) {
+  const params = new URLSearchParams({
+    memberId: String(memberId),
+    page: String(page),
+    size: String(size),
+  })
+  return fetchApi<ApiResponse<FeedListData>>(`/api/posts/me?${params.toString()}`)
 }
 
 // 모집 조건(성별·나이·여행지) 충족 여부는 서버가 검증함 — 불충족 시 에러 응답

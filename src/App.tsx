@@ -20,6 +20,7 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/post/new" element={<PostCreatePage />} />
+          <Route path="/post/:postId/edit" element={<PostCreatePage />} />
           <Route path="/post/:postId" element={<PostDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

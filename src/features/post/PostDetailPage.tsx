@@ -1,10 +1,12 @@
 // pages/post/PostDetailPage.tsx
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Header } from '../../components/Header'
 import { KakaoChatModal } from '../../components/KakaoChatModal'
 import { usePostDetail } from '../../hooks/usePost'
-import { Calendar } from 'lucide-react'
+import { deletePost, updateRecruitingStatus } from '../../api/post'
+import { Calendar, Pencil, Trash2, Ban, RotateCcw } from 'lucide-react'
 import {
   formatAgeFromBirthYear,
   formatAgeRange,
@@ -20,15 +22,33 @@ function getPersonGenderLabel(gender: AuthorGender): string {
   return gender === 'FEMALE' ? '여성' : '남성'
 }
 
+type ConfirmAction = 'delete' | 'toggle-recruiting'
+
 export function PostDetailPage() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { postId } = useParams<{ postId: string }>()
   const { data: post, isLoading, isError } = usePostDetail(postId)
   const { data: myProfile } = useMyProfile()
   const [isChatModalOpen, setIsChatModalOpen] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deletePost(postId as string, myProfile?.id as number),
+    onSuccess: () => navigate('/feed', { replace: true }),
+  })
+
+  const toggleRecruitingMutation = useMutation({
+    mutationFn: () => updateRecruitingStatus(postId as string, myProfile?.id as number, !post?.isRecruiting),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['post', postId] })
+      setConfirmAction(null)
+    },
+  })
 
   if (isLoading) {
     return (
-      <div className="relative min-h-screen bg-[#f7fafe] pb-24">
+      <div className="relative min-h-screen bg-[#f5fafe] pb-24">
         <Header />
         <div className="px-4 mt-4 flex flex-col gap-3">
           <div className="h-6 w-2/3 rounded bg-slate-100 animate-pulse" />
@@ -40,7 +60,7 @@ export function PostDetailPage() {
 
   if (isError || !post) {
     return (
-      <div className="relative min-h-screen bg-[#f7fafe] pb-24">
+      <div className="relative min-h-screen bg-[#f5fafe] pb-24">
         <Header />
         <div className="flex flex-col items-center justify-center py-20 px-4">
           <p className="text-sm text-slate-400">게시글을 찾을 수 없어요.</p>
@@ -50,9 +70,10 @@ export function PostDetailPage() {
   }
 
   const city = getCityMeta(post.travelCity)
+  const isAuthor = myProfile?.id === post.authorId
 
   return (
-    <div className="relative min-h-screen bg-[#f7fafe] pb-24">
+    <div className="relative min-h-screen bg-[#f5fafe] pb-24">
       <Header />
 
       <div className="px-4 mt-4">
@@ -86,6 +107,34 @@ export function PostDetailPage() {
           <span className="text-xs text-slate-400">
             최종 수정 {formatUpdatedDate(post.updatedAt)}
           </span>
+          {isAuthor && (
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/post/${post.id}/edit`)}
+                className="flex items-center gap-1 text-xs font-medium text-blue-600 cursor-pointer"
+              >
+                <Pencil size={12} />
+                수정하기
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmAction('delete')}
+                className="flex items-center gap-1 text-xs font-medium text-red-500 cursor-pointer"
+              >
+                <Trash2 size={12} />
+                삭제하기
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmAction('toggle-recruiting')}
+                className="flex items-center gap-1 text-xs font-medium text-slate-500 cursor-pointer"
+              >
+                {post.isRecruiting ? <Ban size={12} /> : <RotateCcw size={12} />}
+                {post.isRecruiting ? '마감하기' : '모집중으로 변경'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 작성자 */}
@@ -136,23 +185,83 @@ export function PostDetailPage() {
         </section>
       </div>
 
-      {/* 하단 고정 바 - 카카오 오픈채팅 버튼만 */}
+      {/* 하단 고정 바 - 마감된 글은 카카오 링크를 아예 안 보여주도록 버튼을 비활성화함 */}
       <div className="fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 border-t border-slate-100 bg-[#fefefe] px-4 py-3">
-        <button
-          onClick={() => setIsChatModalOpen(true)}
-          className="w-full rounded-xl bg-[#FEE500] py-3.5 text-sm font-bold text-black/85"
-        >
-          카카오 오픈채팅 입장
-        </button>
+        {post.isRecruiting ? (
+          <button
+            onClick={() => setIsChatModalOpen(true)}
+            className="w-full rounded-xl bg-[#FEE500] py-3.5 text-sm font-bold text-black/85"
+          >
+            카카오 오픈채팅 입장
+          </button>
+        ) : (
+          <button
+            disabled
+            className="w-full rounded-xl bg-slate-100 py-3.5 text-sm font-bold text-slate-400 cursor-not-allowed"
+          >
+            마감된 모집글이에요
+          </button>
+        )}
       </div>
 
       <KakaoChatModal
-        open={isChatModalOpen}
+        open={isChatModalOpen && post.isRecruiting}
         onClose={() => setIsChatModalOpen(false)}
         authorName={post.authorName}
         postId={post.id.toString()}
         memberId={myProfile?.id}
       />
+
+      {confirmAction && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6"
+          onClick={() => setConfirmAction(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-bold text-slate-900">
+              {confirmAction === 'delete'
+                ? '모집글을 삭제할까요?'
+                : post.isRecruiting ? '모집을 마감할까요?' : '다시 모집중으로 변경할까요?'}
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {confirmAction === 'delete'
+                ? '삭제하면 되돌릴 수 없어요.'
+                : post.isRecruiting
+                  ? '마감하면 참가 신청을 더 받지 않아요. 이후 다시 모집중으로 바꿀 수 있어요.'
+                  : '다시 참가 신청을 받을 수 있어요.'}
+            </p>
+
+            {(confirmAction === 'delete' ? deleteMutation.isError : toggleRecruitingMutation.isError) && (
+              <p className="mt-3 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-500">
+                처리에 실패했어요. 다시 시도해주세요.
+              </p>
+            )}
+
+            <button
+              onClick={() => (confirmAction === 'delete' ? deleteMutation.mutate() : toggleRecruitingMutation.mutate())}
+              disabled={confirmAction === 'delete' ? deleteMutation.isPending : toggleRecruitingMutation.isPending}
+              className={`mt-4 w-full rounded-xl py-3 text-sm font-bold text-white cursor-pointer disabled:opacity-50 ${
+                confirmAction === 'delete' ? 'bg-red-500' : 'bg-slate-700'
+              }`}
+            >
+              {confirmAction === 'delete'
+                ? deleteMutation.isPending ? '삭제 중...' : '삭제하기'
+                : toggleRecruitingMutation.isPending
+                  ? '처리 중...'
+                  : post.isRecruiting ? '마감하기' : '모집중으로 변경'}
+            </button>
+            <button
+              onClick={() => setConfirmAction(null)}
+              className="mt-2 w-full rounded-xl bg-slate-100 py-3 text-sm font-medium text-slate-600 cursor-pointer"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
 import { Header } from '../../components/Header'
 import { FeedFilterBar } from '../../components/FeedFilterBar'
 import { FeedPostCard } from '../../components/FeedPostCard'
 import { useInfiniteFeed } from '../../hooks/useInfiniteFeed'
 import { useInfiniteScrollTrigger } from '../../hooks/useInfiniteScrollerTrigger'
-import { matchesQuery } from '../../utils/hangul'
 import { getCountryOptions } from '../../utils/countryMeta'
 import type { FeedFilterOptions, FeedFilters } from '../../types/feed'
 import { useMyProfile } from '../../hooks/useMyProfile'
@@ -28,13 +26,10 @@ const DEFAULT_FILTERS: FeedFilters = {
   startDate: undefined,
   endDate: undefined,
   sort: 'latest',
-  keyword: '',
 }
 
 export function FeedPage() {
   const [filters, setFilters] = useState<FeedFilters>(DEFAULT_FILTERS)
-  const [searchInput, setSearchInput] = useState('')
-  const [showSuggestions, setShowSuggestions] = useState(false)
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteFeed(filters)
 
@@ -45,34 +40,14 @@ export function FeedPage() {
 
   const items = data?.pages.flatMap((page) => page.items) ?? []
 
-  // keyword/sort는 GET /api/posts 쿼리 파라미터에 없어 서버가 아닌 프론트에서 처리
-  // (불러온 페이지 내에서만 동작 — 백엔드 검색/정렬 파라미터가 추가되면 useInfiniteFeed로 이전)
-  const keyword = filters.keyword.trim().toLowerCase()
-  const searchedItems = keyword ? items.filter((item) => item.title.toLowerCase().includes(keyword)) : items
-
-  // 최신순은 백엔드가 이미 수정일 기준 내림차순으로 내려주는 순서를 그대로 사용
-  // (updatedAt으로 프론트에서 다시 정렬하면 조회수 증가로 updatedAt이 갱신된 글이 "읽은 순서대로" 위로 튀어오름)
+  // 최신순은 id 내림차순(작성 순서)으로 정렬 — 백엔드가 내려주는 기본 순서를 그대로 쓰면
+  // 백엔드 자체가 updatedAt 기준 정렬이라, 글을 열어보기만 해도 조회수가 올라 updatedAt이
+  // 갱신되면서 "읽은 순서대로" 목록 맨 위로 튀어오르는 문제가 있었음
   const sortedItems =
-    filters.sort === 'latest' ? searchedItems : [...searchedItems].sort((a, b) => b.view - a.view)
+    filters.sort === 'latest' ? [...items].sort((a, b) => b.id - a.id) : [...items].sort((a, b) => b.view - a.view)
 
   const visibleItems =
     onlyEligible && myProfile ? sortedItems.filter((item) => isEligibleForPost(myProfile, item)) : sortedItems
-
-  const suggestions = searchInput.trim()
-    ? getCountryOptions().filter((c) => matchesQuery(searchInput.trim(), c.label))
-    : []
-
-  function handleSearchSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setFilters((prev) => ({ ...prev, keyword: searchInput }))
-    setShowSuggestions(false)
-  }
-
-  function handleSelectCountry(label: string) {
-    setSearchInput(label)
-    setShowSuggestions(false)
-    // TODO: FeedFilters에 country 필드 추가 후 여기서 setFilters로 실제 필터 연동
-  }
 
   return (
     <div className="pb-8">
@@ -85,43 +60,10 @@ export function FeedPage() {
             <br />
             같이 가볼까요?
           </h1>
-          <form onSubmit={handleSearchSubmit} className="relative mt-3"> {/* className에 relative 추가 */}
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-              size={16}
-              strokeWidth={2}
-            /> {/* 추가 */}
-            <input
-              value={searchInput}
-              onChange={(e) => {
-                setSearchInput(e.target.value)
-                setShowSuggestions(true) // 추가
-              }}
-              onFocus={() => setShowSuggestions(true)} // 추가
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // 추가
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs shadow-sm bg-white" // px-4 → pl-10 pr-4 (아이콘 자리 확보)
-              placeholder="도시, 날짜로 동행 찾기"
-            />
-
-            {showSuggestions && suggestions.length > 0 && ( // 추가
-              <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
-                {suggestions.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => handleSelectCountry(c.label)}
-                    className="cursor-pointer block w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </form>
         </header>
       </div>
 
-      <div className='bg-[#f7fafe]'>
+      <div className='bg-[#f5fafe]'>
         <FeedFilterBar
           filters={filters}
           options={FILTER_OPTIONS}
@@ -132,7 +74,7 @@ export function FeedPage() {
         />
       </div>
 
-      <div className="px-4 flex flex-col gap-3 pt-2 bg-[#f7fafe]">
+      <div className="px-4 flex flex-col gap-3 pt-2 bg-[#f5fafe]">
         {isLoading &&
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-24 rounded-xl bg-slate-100 animate-pulse" />

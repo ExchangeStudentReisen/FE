@@ -24,6 +24,7 @@ export function Header() {
   const navigate = useNavigate()
   const logout = useLogout()
   const isHome = pathname === '/feed'
+  const isProfile = pathname.startsWith('/profile')
   const showBack = isPostDetail(pathname)
   const label = getLabel(pathname)
 
@@ -46,11 +47,15 @@ export function Header() {
           </button>
         )}
         {!showBack && (
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
+          <button
+            onClick={() => navigate('/feed')}
+            className="cursor-pointer w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0"
+            aria-label="홈으로 이동"
+          >
             <span className="text-white text-m font-bold">R</span>
-          </div>
+          </button>
         )}
-        {!showBack && (
+        {!showBack && !isProfile && (
           isHome ? (
             <span className="text-primary font-bold text-lg">Reisen</span>
           ) : (

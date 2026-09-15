@@ -3,10 +3,10 @@ import type { MemberGender } from './auth'
 export type RecruitGender = 'any' | 'female' | 'male'
 
 // ---- 여기서부터 POST /api/posts 요청/응답 스키마 기준으로 추가 ----
-export type ApiGender = 'ANY' | 'FEMALE' | 'MALE'
+export type ApiGender = 'OTHER' | 'FEMALE' | 'MALE'
 
 export const RECRUIT_GENDER_TO_API: Record<RecruitGender, ApiGender> = {
-  any: 'ANY',
+  any: 'OTHER',
   female: 'FEMALE',
   male: 'MALE',
 }
@@ -52,6 +52,22 @@ export interface CreatePostResponseData {
   clickCnt: number
   createdAt: string
   updatedAt: string
+}
+
+// ---- 여기서부터 PUT /api/posts/{id} 요청 스키마 기준으로 추가 ----
+// 작성자 본인만 수정 가능 — 응답은 GET /api/posts/{id}와 동일해 PostDetailResponse를 그대로 재사용함
+export interface UpdatePostRequest {
+  title: string
+  content: string
+  kakaotalkLink: string
+  maxMembers: number
+  startAge: number
+  endAge: number
+  gender: ApiGender
+  startDate: string
+  endDate: string
+  travelCity: Country
+  isRecruiting: boolean
 }
 
 // ---- 여기서부터 GET /api/posts/{id} 응답 스키마 기준으로 추가 (구 types/postDetail.ts) ----

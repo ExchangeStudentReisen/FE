@@ -6,7 +6,7 @@ interface FullScreenLoadingProps {
 
 export function FullScreenLoading({ message }: FullScreenLoadingProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-white">
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-[#f5fafe]">
       <LoadingSpinner size="lg" />
       {message && <p className="text-sm text-slate-500">{message}</p>}
     </div>
