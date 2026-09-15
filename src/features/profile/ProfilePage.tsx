@@ -1,6 +1,9 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Pencil } from 'lucide-react'
 import { Header } from '../../components/Header'
 import { FeedPostCard } from '../../components/FeedPostCard'
-import { useMyProfile } from '../../hooks/useMyProfile'
+import { useMyProfile, useUpdateMyProfile, useDeleteMyProfile } from '../../hooks/useMyProfile'
 import { useMyPosts } from '../../hooks/useMyPosts'
 import { useInfiniteScrollTrigger } from '../../hooks/useInfiniteScrollerTrigger'
 import { calculateAge } from '../../utils/eligibility'
@@ -22,12 +25,64 @@ const DISPATCH_COUNTRY_LABEL: Record<string, string> = {
 }
 
 export function ProfilePage() {
+  const navigate = useNavigate()
   const { data: myProfile } = useMyProfile()
   const memberId = myProfile?.id
+  const updateProfile = useUpdateMyProfile()
+  const deleteProfile = useDeleteMyProfile()
+
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [nameError, setNameError] = useState('')
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false)
+  const [withdrawError, setWithdrawError] = useState('')
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useMyPosts(memberId)
 
   const sentinelRef = useInfiniteScrollTrigger(() => fetchNextPage(), !!hasNextPage && !isFetchingNextPage)
+
+  const handleStartEditName = () => {
+    if (!myProfile) return
+    setNameInput(myProfile.name)
+    setNameError('')
+    setIsEditingName(true)
+  }
+
+  const handleCancelEditName = () => {
+    setIsEditingName(false)
+    setNameError('')
+  }
+
+  const handleSaveName = () => {
+    if (!myProfile) return
+    const trimmed = nameInput.trim()
+    if (!trimmed) {
+      setNameError('닉네임을 입력해주세요.')
+      return
+    }
+    updateProfile.mutate(
+      {
+        id: myProfile.id,
+        name: trimmed,
+        gender: myProfile.gender,
+        birthYear: myProfile.birthYear,
+        dispatchCountry: myProfile.dispatchCountry,
+      },
+      {
+        onSuccess: () => setIsEditingName(false),
+        onError: () => setNameError('닉네임 변경에 실패했어요. 다시 시도해주세요.'),
+      },
+    )
+  }
+
+  const handleWithdraw = () => {
+    if (!myProfile) return
+    setWithdrawError('')
+    deleteProfile.mutate(myProfile.id, {
+      onSuccess: () => navigate('/', { replace: true }),
+      onError: () => setWithdrawError('탈퇴에 실패했어요. 다시 시도해주세요.'),
+    })
+  }
 
   // id 내림차순 = 작성 순서 최신순. updatedAt은 조회수가 오를 때도 갱신돼서 최근 작성 여부와 안 맞음
   const myPosts = (data?.pages.flatMap((page) => page.data.content) ?? [])
@@ -36,6 +91,34 @@ export function ProfilePage() {
 
   return (
     <div className="pb-8">
+      {showWithdrawModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-8">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center">
+            <p className="text-base font-semibold text-slate-900 mb-2">정말 탈퇴하시겠어요?</p>
+            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              탈퇴하면 계정과 작성한 정보가 삭제되고 되돌릴 수 없어요.
+            </p>
+            {withdrawError && <p className="text-xs text-red-500 mb-3">{withdrawError}</p>}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowWithdrawModal(false)}
+                disabled={deleteProfile.isPending}
+                className="flex-1 h-11 rounded-xl border border-slate-300 text-slate-600 font-medium cursor-pointer disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleWithdraw}
+                disabled={deleteProfile.isPending}
+                className="flex-1 h-11 rounded-xl bg-red-500 text-white font-medium cursor-pointer disabled:opacity-50"
+              >
+                {deleteProfile.isPending ? '탈퇴 중...' : '탈퇴하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Header/>
         <div className='px-4'>
           <h1 className="text-2xl font-bold text-slate-900 mb-4">내 프로필</h1>
@@ -43,12 +126,67 @@ export function ProfilePage() {
           {myProfile ? (
             <div className="rounded-xl border border-slate-100 bg-white p-4">
               <div className="flex items-center justify-between">
-                <p className="text-lg font-bold text-slate-900">{myProfile.name}</p>
-                {myProfile.emailVerified && (
-                  <span className="rounded-full bg-primary-light px-2.5 py-1 text-xs font-medium text-primary">
-                    학교 인증 완료
-                  </span>
+                {isEditingName ? (
+                  <div className="flex-1">
+                    <input
+                      value={nameInput}
+                      onChange={(e) => {
+                        setNameInput(e.target.value)
+                        if (nameError) setNameError('')
+                      }}
+                      autoFocus
+                      className={`w-full rounded-lg border px-2.5 py-1.5 text-sm font-medium outline-none ${
+                        nameError
+                          ? 'border-red-400 text-red-500 focus:border-red-400'
+                          : 'border-slate-200 focus:border-blue-600'
+                      }`}
+                    />
+                    {nameError && <p className="mt-1 text-xs text-red-500">{nameError}</p>}
+                  </div>
+                ) : (
+                  <p className="text-lg font-bold text-slate-900">{myProfile.name}</p>
                 )}
+
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  {isEditingName ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleSaveName}
+                        disabled={updateProfile.isPending}
+                        className="rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-white cursor-pointer disabled:opacity-50"
+                      >
+                        {updateProfile.isPending ? '저장 중...' : '저장'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelEditName}
+                        disabled={updateProfile.isPending}
+                        className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 cursor-pointer disabled:opacity-50"
+                      >
+                        취소
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleStartEditName}
+                        aria-label="닉네임 수정"
+                        className="p-1 text-slate-400 cursor-pointer"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowWithdrawModal(true)}
+                        className="text-xs font-medium text-slate-400 underline cursor-pointer whitespace-nowrap"
+                      >
+                        탈퇴
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               <p className="mt-1 text-sm text-slate-500">{myProfile.email}</p>
               <div className="mt-3 flex flex-wrap gap-1.5">

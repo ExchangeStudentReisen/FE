@@ -34,6 +34,14 @@ export interface ReissuePayload {
   refreshToken: string
 }
 
+// PUT /api/members/{id} 요청 바디 — name(닉네임) 외 필드도 서버 스펙상 함께 전달해야 함
+export interface UpdateMemberPayload {
+  name: string
+  gender: MemberGender
+  birthYear: number
+  dispatchCountry: string
+}
+
 export interface TokenPair {
   accessToken: string
   refreshToken: string
