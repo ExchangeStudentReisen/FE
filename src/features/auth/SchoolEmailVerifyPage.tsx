@@ -378,14 +378,14 @@ export function SchoolEmailVerifyPage() {
                 value={schoolSearch}
                 onChange={(e) => setSchoolSearch(e.target.value)}
                 placeholder="학교 이름 검색"
-                className="w-full px-4 py-2.5 rounded-xl border-2 border-primary text-sm mb-3 focus:outline-none"
+                className="w-full px-4 py-2.5 rounded-xl border-2 border-primary text-sm mb-3 bg-white focus:outline-none"
               />
               <div className="flex flex-col gap-2">
                 {filteredSchools.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => handleSelectSchool(s)}
-                    className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 hover:border-primary hover:bg-primary-light transition-colors"
+                    className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-800 hover:border-primary hover:bg-primary-light transition-colors"
                   >
                     {s.name}
                   </button>
@@ -418,7 +418,7 @@ export function SchoolEmailVerifyPage() {
             <input
               {...register('local')}
               placeholder="yourname"
-              className={`flex-1 px-4 py-2.5 rounded-xl border text-sm ${
+              className={`flex-1 px-4 py-2.5 rounded-xl border bg-white text-sm ${
                 errors.local
                   ? 'border-red-400 text-red-500 placeholder:text-red-400'
                   : 'border-slate-200'
@@ -491,7 +491,7 @@ export function SchoolEmailVerifyPage() {
                 inputMode="numeric"
                 onChange={(e) => handleCodeChange(i, e.target.value)}
                 onKeyDown={(e) => handleCodeKeyDown(i, e)}
-                className={`w-full aspect-square text-center text-lg rounded-xl border ${
+                className={`w-full aspect-square text-center text-lg rounded-xl border bg-white ${
                   error ? 'border-red-400' : 'border-slate-200'
                 }`}
               />
@@ -509,14 +509,15 @@ export function SchoolEmailVerifyPage() {
           <button
             onClick={handleResend}
             disabled={resendCooldown > 0}
-            className="w-full h-11 rounded-xl border border-slate-300 text-slate-600 font-medium disabled:opacity-50 disabled:text-slate-400"
+            className="w-full h-11 rounded-xl border border-slate-300 bg-white text-slate-600 font-medium disabled:bg-slate-100 disabled:text-slate-400"
           >
             {resendCooldown > 0 ? `코드 재전송 (${resendCooldown}초 후 가능)` : '코드 재전송'}
           </button>
 
           <p className="text-xs text-slate-400 mt-4 leading-relaxed">
-            이메일 주소가 정확한지 다시 한 번 확인해주세요. 코드가 보이지 않는다면 스팸
-            메일함도 확인해주세요.
+            이메일 주소가 정확한지 다시 한 번 확인해주세요.
+            <br />
+            코드가 보이지 않는다면 스팸 메일함도 확인해주세요.
           </p>
         </div>
       )}
@@ -535,7 +536,7 @@ export function SchoolEmailVerifyPage() {
             value={editableName}
             onChange={(e) => setEditableName(e.target.value)}
             placeholder="네이버에서 가져온 이름"
-            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm mb-5"
+            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm mb-5"
           />
 
           <label className="text-sm text-slate-500 block mb-1.5">성별</label>
@@ -596,7 +597,7 @@ export function SchoolEmailVerifyPage() {
             value={countrySearch}
             onChange={(e) => setCountrySearch(e.target.value)}
             placeholder="국가 이름 검색"
-            className="w-full px-4 py-2.5 rounded-xl border-2 border-primary text-sm mb-2 focus:outline-none"
+            className="w-full px-4 py-2.5 rounded-xl border-2 border-primary bg-white text-sm mb-2 focus:outline-none"
           />
           <div className="flex flex-col gap-1.5 mb-5 max-h-48 overflow-y-auto">
             {filteredCountries.map((c) => (
@@ -607,7 +608,7 @@ export function SchoolEmailVerifyPage() {
                 className={`w-full text-left px-4 py-2.5 rounded-xl border text-sm font-medium ${
                   dispatchCountry === c.value
                     ? 'border-primary bg-primary-light text-primary'
-                    : 'border-slate-200 text-slate-700'
+                    : 'border-slate-200 bg-white text-slate-700'
                 }`}
               >
                 {c.label}
