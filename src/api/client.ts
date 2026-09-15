@@ -57,7 +57,9 @@ export async function fetchApi<T>(
   }
 
   if (!res.ok) {
-    throw new Error(`API Error: ${res.status}`)
+    // 백엔드가 ApiResponse.message로 실패 사유를 내려주면 그대로 노출 — 없으면 상태 코드만 표기
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.message || `API Error: ${res.status}`)
   }
   if(res.status === 204) {
     return undefined as T

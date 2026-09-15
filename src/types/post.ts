@@ -3,10 +3,10 @@ import type { MemberGender } from './auth'
 export type RecruitGender = 'any' | 'female' | 'male'
 
 // ---- 여기서부터 POST /api/posts 요청/응답 스키마 기준으로 추가 ----
-export type ApiGender = 'ANY' | 'FEMALE' | 'MALE'
+export type ApiGender = 'OTHER' | 'FEMALE' | 'MALE'
 
 export const RECRUIT_GENDER_TO_API: Record<RecruitGender, ApiGender> = {
-  any: 'ANY',
+  any: 'OTHER',
   female: 'FEMALE',
   male: 'MALE',
 }

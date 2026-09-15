@@ -40,9 +40,11 @@ export function FeedPage() {
 
   const items = data?.pages.flatMap((page) => page.items) ?? []
 
-  // 최신순은 백엔드가 이미 수정일 기준 내림차순으로 내려주는 순서를 그대로 사용
-  // (updatedAt으로 프론트에서 다시 정렬하면 조회수 증가로 updatedAt이 갱신된 글이 "읽은 순서대로" 위로 튀어오름)
-  const sortedItems = filters.sort === 'latest' ? items : [...items].sort((a, b) => b.view - a.view)
+  // 최신순은 id 내림차순(작성 순서)으로 정렬 — 백엔드가 내려주는 기본 순서를 그대로 쓰면
+  // 백엔드 자체가 updatedAt 기준 정렬이라, 글을 열어보기만 해도 조회수가 올라 updatedAt이
+  // 갱신되면서 "읽은 순서대로" 목록 맨 위로 튀어오르는 문제가 있었음
+  const sortedItems =
+    filters.sort === 'latest' ? [...items].sort((a, b) => b.id - a.id) : [...items].sort((a, b) => b.view - a.view)
 
   const visibleItems =
     onlyEligible && myProfile ? sortedItems.filter((item) => isEligibleForPost(myProfile, item)) : sortedItems
