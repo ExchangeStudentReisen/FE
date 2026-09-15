@@ -15,7 +15,7 @@ import {
   type PostRecruitGender,
   type Country,
 } from '../../types/post'
-import { COUNTRY_OPTIONS, RECENT_COUNTRY_CODES } from '../../mocks/countryMock'
+import { COUNTRY_OPTIONS } from '../../mocks/countryMock'
 import { useMyProfile } from '../../hooks/useMyProfile'
 import { usePostDetail } from '../../hooks/usePost'
 import { calculateAge } from '../../utils/eligibility'
@@ -184,7 +184,6 @@ export function PostCreatePage() {
   const [cityOpen, setCityOpen] = useState(false)
 
   const selectedCountry = COUNTRY_OPTIONS.find((c) => c.code === countryCode)
-  const recentCountries = COUNTRY_OPTIONS.filter((c) => RECENT_COUNTRY_CODES.includes(c.code))
 
   const today = useMemo(() => {
     const d = new Date()
@@ -239,10 +238,10 @@ export function PostCreatePage() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="pb-24">
-      <div className="sticky top-0 z-10 bg-white px-4 pt-3 pb-2 flex items-center h-9">
+      <div className="sticky top-0 z-10 bg-[#f5fafe] px-4 pt-3 pb-2 flex items-center h-9">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => (isEditMode ? navigate(-1) : navigate('/feed'))}
           aria-label="닫기"
           className="p-1 -ml-1 cursor-pointer text-slate-700"
         >
@@ -264,7 +263,7 @@ export function PostCreatePage() {
                 setCityOpen(false)
               }}
               className={[
-                'w-full flex items-center justify-between border rounded-xl px-3 py-2.5 text-sm cursor-pointer',
+                'w-full flex items-center justify-between border rounded-xl px-3 py-2.5 text-sm bg-white cursor-pointer',
                 showError(!!errors.country) ? 'border-red-400' : 'border-slate-200',
               ].join(' ')}
             >
@@ -310,7 +309,7 @@ export function PostCreatePage() {
                 setCountryOpen(false)
               }}
               className={[
-                'w-full flex items-center justify-between border rounded-xl px-3 py-2.5 text-sm disabled:opacity-40 cursor-pointer',
+                'w-full flex items-center justify-between border rounded-xl px-3 py-2.5 text-sm bg-white disabled:opacity-40 cursor-pointer',
                 showError(!!errors.city) ? 'border-red-400' : 'border-slate-200',
               ].join(' ')}
             >
@@ -344,31 +343,13 @@ export function PostCreatePage() {
           <p className="mt-1 text-xs text-red-500">{errors.country?.message ?? errors.city?.message}</p>
         )}
 
-        <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs text-slate-400 mr-1">최근:</span>
-          {recentCountries.map((c) => (
-            <button
-              key={c.code}
-              type="button"
-              onClick={() => {
-                setValue('country', c.code, { shouldValidate: true })
-                setValue('city', c.cities[0]?.code ?? '', { shouldValidate: true })
-              }}
-              className="flex items-center gap-1 text-xs border border-slate-200 rounded-full px-2.5 py-1 cursor-pointer"
-            >
-              <span>{c.flag}</span>
-              <span>{c.name}</span>
-            </button>
-          ))}
-        </div>
-
         <p className="mt-5 text-sm font-medium text-slate-700">여행 날짜</p>
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <div className={`border rounded-xl px-3 py-2.5 ${showError(!!errors.startDate) ? 'border-red-400' : 'border-slate-200'}`}>
+          <div className={`border rounded-xl px-3 py-2.5 bg-white ${showError(!!errors.startDate) ? 'border-red-400' : 'border-slate-200'}`}>
             <p className="text-xs text-slate-400">출발</p>
             <p className="text-sm font-medium mt-0.5">{startDate ? formatDisplay(startDate) : '날짜 선택'}</p>
           </div>
-          <div className={`border rounded-xl px-3 py-2.5 ${showError(!!errors.endDate) ? 'border-red-400' : 'border-slate-200'}`}>
+          <div className={`border rounded-xl px-3 py-2.5 bg-white ${showError(!!errors.endDate) ? 'border-red-400' : 'border-slate-200'}`}>
             <p className="text-xs text-slate-400">도착</p>
             <p className="text-sm font-medium mt-0.5">{endDate ? formatDisplay(endDate) : '날짜 선택'}</p>
           </div>
@@ -439,7 +420,7 @@ export function PostCreatePage() {
                 onClick={() => setValue('recruitGender', opt.value, { shouldValidate: true })}
                 className={[
                   'py-2.5 rounded-xl text-sm border cursor-pointer disabled:cursor-not-allowed disabled:opacity-40',
-                  recruitGender === opt.value ? 'border-blue-600 bg-blue-600 text-white font-medium' : 'border-slate-200 text-slate-600',
+                  recruitGender === opt.value ? 'border-blue-600 bg-blue-600 text-white font-medium' : 'border-slate-200 bg-white text-slate-600',
                 ].join(' ')}
               >
                 {opt.label}
@@ -452,7 +433,7 @@ export function PostCreatePage() {
           <p className="text-sm font-medium text-slate-700">연령대</p>
           <p className="text-sm text-blue-600 font-medium">{minAge} — {maxAge}세</p>
         </div>
-        <div className="relative mt-4 h-5">
+        <div className="relative isolate mt-4 h-5">
           <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-slate-100 rounded-full" />
           <div
             className="absolute top-1/2 -translate-y-1/2 h-1 bg-blue-600 rounded-full"
@@ -494,7 +475,7 @@ export function PostCreatePage() {
               onClick={() => setValue('headcount', n, { shouldValidate: true })}
               className={[
                 'py-2.5 rounded-xl text-sm border cursor-pointer',
-                headcount === n ? 'border-blue-600 bg-blue-600 text-white font-medium' : 'border-slate-200 text-slate-600',
+                headcount === n ? 'border-blue-600 bg-blue-600 text-white font-medium' : 'border-slate-200 bg-white text-slate-600',
               ].join(' ')}
             >
               {n === 5 ? '5+명' : `${n}명`}
@@ -512,7 +493,7 @@ export function PostCreatePage() {
             {...register('title')}
             maxLength={30}
             placeholder="프라하 같이 다니실 여성분 구해요"
-            className={`mt-2 w-full border rounded-xl px-3 py-2.5 text-sm outline-none ${showError(!!errors.title) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
+            className={`mt-2 w-full border rounded-xl px-3 py-2.5 text-sm bg-white outline-none ${showError(!!errors.title) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
           />
           <div className="flex items-center justify-between mt-1">
             {showError(!!errors.title) ? <p className="text-xs text-red-500">{errors.title?.message}</p> : <span />}
@@ -527,7 +508,7 @@ export function PostCreatePage() {
             maxLength={500}
             rows={5}
             placeholder="일정, 같이 하고 싶은 것, 원하는 동행 스타일을 자유롭게 적어주세요"
-            className={`mt-2 w-full border rounded-xl px-3 py-2.5 text-sm outline-none resize-none ${showError(!!errors.content) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
+            className={`mt-2 w-full border rounded-xl px-3 py-2.5 text-sm bg-white outline-none resize-none ${showError(!!errors.content) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
           />
           <div className="flex items-center justify-between mt-1">
             {showError(!!errors.content) ? <p className="text-xs text-red-500">{errors.content?.message}</p> : <span />}
@@ -546,7 +527,7 @@ export function PostCreatePage() {
               {...register('kakaoOpenChatUrl')}
               readOnly={isEditMode}
               placeholder="open.kakao.com/o/xxxxxxx"
-              className={`w-full border rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none ${isEditMode ? 'bg-slate-50 text-slate-500' : ''} ${showError(!!errors.kakaoOpenChatUrl) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
+              className={`w-full border rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none ${isEditMode ? 'bg-slate-50 text-slate-500' : 'bg-white'} ${showError(!!errors.kakaoOpenChatUrl) ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-600'}`}
             />
           </div>
           {showError(!!errors.kakaoOpenChatUrl) && <p className="mt-1 text-xs text-red-500">{errors.kakaoOpenChatUrl?.message}</p>}
@@ -558,7 +539,7 @@ export function PostCreatePage() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 bg-white px-4 py-3 border-t border-slate-100">
+      <div className="fixed bottom-0 left-1/2 w-full max-w-107.5 -translate-x-1/2 bg-[#f5fafe] px-4 py-3 border-t border-slate-100">
         <button type="submit" disabled={isPending} className="w-full py-3 rounded-xl bg-blue-600 text-white font-medium cursor-pointer disabled:opacity-50">
           {isEditMode
             ? isPending ? '수정 중...' : '수정 완료'

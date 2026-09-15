@@ -3,6 +3,23 @@ import { FeedPostCard } from '../../components/FeedPostCard'
 import { useMyProfile } from '../../hooks/useMyProfile'
 import { useMyPosts } from '../../hooks/useMyPosts'
 import { useInfiniteScrollTrigger } from '../../hooks/useInfiniteScrollerTrigger'
+import { calculateAge } from '../../utils/eligibility'
+import type { MemberGender } from '../../types/auth'
+
+const GENDER_LABEL: Record<MemberGender, string> = {
+  MALE: '남성',
+  FEMALE: '여성',
+}
+
+// TODO: dispatchCountry 실제 enum 전체 목록으로 교체 예정 (SchoolEmailVerifyPage의 DISPATCH_COUNTRIES 참고)
+const DISPATCH_COUNTRY_LABEL: Record<string, string> = {
+  GERMANY: '독일',
+  FRANCE: '프랑스',
+  ITALY: '이탈리아',
+  SPAIN: '스페인',
+  NETHERLANDS: '네덜란드',
+  UK: '영국',
+}
 
 export function ProfilePage() {
   const { data: myProfile } = useMyProfile()
@@ -12,15 +29,43 @@ export function ProfilePage() {
 
   const sentinelRef = useInfiniteScrollTrigger(() => fetchNextPage(), !!hasNextPage && !isFetchingNextPage)
 
-  const myPosts = data?.pages.flatMap((page) => page.data.content) ?? []
+  // id 내림차순 = 작성 순서 최신순. updatedAt은 조회수가 오를 때도 갱신돼서 최근 작성 여부와 안 맞음
+  const myPosts = (data?.pages.flatMap((page) => page.data.content) ?? [])
+    .slice()
+    .sort((a, b) => b.id - a.id)
 
   return (
     <div className="pb-8">
       <Header/>
         <div className='px-4'>
           <h1 className="text-2xl font-bold text-slate-900 mb-4">내 프로필</h1>
-          {/* TODO: 인증 학교, 동행 완료/진행중/매너 평점, 다녀온 도시 타임라인 */}
-          <p className="text-m text-slate-400">프로필 정보가 이 자리에 표시됩니다.</p>
+          {/* TODO: 동행 완료/진행중/매너 평점, 다녀온 도시 타임라인 */}
+          {myProfile ? (
+            <div className="rounded-xl border border-slate-100 bg-white p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-lg font-bold text-slate-900">{myProfile.name}</p>
+                {myProfile.emailVerified && (
+                  <span className="rounded-full bg-primary-light px-2.5 py-1 text-xs font-medium text-primary">
+                    학교 인증 완료
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-sm text-slate-500">{myProfile.email}</p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                  {myProfile.schoolName}
+                </span>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                  {GENDER_LABEL[myProfile.gender]} · {calculateAge(myProfile.birthYear)}세
+                </span>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                  파견 {DISPATCH_COUNTRY_LABEL[myProfile.dispatchCountry] ?? myProfile.dispatchCountry}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="h-24 rounded-xl bg-slate-100 animate-pulse" />
+          )}
 
           <h2 className="mt-8 mb-3 text-lg font-bold text-slate-900">내가 작성한 동행 글</h2>
 
