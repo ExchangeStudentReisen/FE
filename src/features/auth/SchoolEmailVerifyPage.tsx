@@ -264,7 +264,7 @@ export function SchoolEmailVerifyPage() {
   const progress = (index / TOTAL_STEPS) * 100
 
   return (
-    <div className="min-h-screen px-6 py-7 bg-white relative">
+    <div className="min-h-screen px-6 py-7 bg-[#f5fafe] relative">
       {showInvalidAccessModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-8">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center">

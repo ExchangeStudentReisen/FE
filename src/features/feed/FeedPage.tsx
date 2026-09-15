@@ -121,7 +121,7 @@ export function FeedPage() {
         </header>
       </div>
 
-      <div className='bg-[#f7fafe]'>
+      <div className='bg-[#f5fafe]'>
         <FeedFilterBar
           filters={filters}
           options={FILTER_OPTIONS}
@@ -132,7 +132,7 @@ export function FeedPage() {
         />
       </div>
 
-      <div className="px-4 flex flex-col gap-3 pt-2 bg-[#f7fafe]">
+      <div className="px-4 flex flex-col gap-3 pt-2 bg-[#f5fafe]">
         {isLoading &&
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-24 rounded-xl bg-slate-100 animate-pulse" />
