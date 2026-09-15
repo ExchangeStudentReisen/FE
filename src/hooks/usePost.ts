@@ -11,6 +11,7 @@ export function usePostDetail(id: string | undefined) {
       return res.data
     },
     enabled: !!id,
+    refetchOnWindowFocus: false,
   })
 }
 
