@@ -26,7 +26,6 @@ export interface FeedFilters {
   startDate?: string // ISO date
   endDate?: string
   sort: 'latest' | 'popular' // TODO: API 파라미터에 없음 — 프론트에서 정렬하거나 백엔드 확인 필요
-  keyword: string // TODO: API 파라미터에 없음 — 검색창 텍스트를 travelCity 매칭으로 쓸지, 프론트 필터로만 쓸지 확인 필요
 }
 
 export interface FeedPageResult {
