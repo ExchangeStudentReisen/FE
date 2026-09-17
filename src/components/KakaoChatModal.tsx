@@ -1,4 +1,4 @@
-import kakaoLogo from '../assets/kakaotalk_sharing_btn_medium.png'
+import kakaoLogo from '../assets/KAKAOTALK.svg'
 import { useChatLink } from '../hooks/usePost'
 
 interface KakaoChatModalProps {
